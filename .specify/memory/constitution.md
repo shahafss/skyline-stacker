@@ -1,46 +1,44 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (unversioned template) → 1.0.0
-Bump rationale: Initial ratification. Every placeholder was replaced with project-specific
-governance, so this starts at MAJOR 1.
+Version change: 1.0.0 → 1.1.0
+Bump rationale: MINOR. Principle V is materially expanded (tuning passed through config,
+in-memory-only dev overrides, full tuning values in every export, golden fixtures limited to
+defaults). No principle was removed, and nothing that was compliant under 1.0.0 is now
+forbidden in a way that changes the principle's meaning, so this is not MAJOR.
 
-Modified principles (template placeholder → new title):
-  - [PRINCIPLE_1_NAME] → I. Deterministic Simulation (NON-NEGOTIABLE)
-  - [PRINCIPLE_2_NAME] → II. Simulation Is Authoritative; Rendering Is Presentation
-  - [PRINCIPLE_3_NAME] → III. Strict UI / Engine Separation
-  - [PRINCIPLE_4_NAME] → IV. Test-First Core Logic
-  - [PRINCIPLE_5_NAME] → V. Single Source of Tuning
-Added principles (the template had 5 slots; the project needs 9):
-  - VI. Performance Budgets
-  - VII. Accessibility and Player Respect
-  - VIII. Phased Delivery and Simplicity
-  - IX. Code Standards
+Modified principles:
+  - V. Single Source of Tuning (title unchanged; rules rewritten and expanded)
 Added sections:
-  - Technology and Platform Constraints (template SECTION_2)
-  - Development Workflow and Quality Gates (template SECTION_3)
-  - Governance (filled in)
+  - Change log (under the version line in Governance)
 Removed sections: none
 
-Templates and commands: not modified (out of scope for this command). They read the
-constitution at runtime. `.specify/templates/plan-template.md` has a "Constitution Check"
-gate that should reference Principles I–IX when the first plan is written.
+Templates and commands: not modified (out of scope for this command).
 
-PRD ↔ constitution points raised under Governance rule 2 (flagged, not silently resolved):
-  1. PRD Phase 1 "Dev tuning panel" live-edits tuning.ts values at runtime. Principle V makes
-     tuning.ts the single source. This constitution reads that as: the sim takes a tuning
-     object whose defaults come from tuning.ts. Runs played with overridden values MUST be
-     marked (non-matching TUNING_VERSION) and MUST NOT become golden fixtures or saved city
-     towers. Confirm with the PRD owner.
-  2. PRD Phase 2 "local playtest telemetry" vs Principle VII "no analytics". Resolved here as a
-     dev-build-only, local-only, never-transmitted exception. Confirm.
-  3. Principle IX lists apps/api in the workspace layout, and Principle VIII forbids NestJS
-     before Phase 6. This constitution reads that as: apps/api MUST NOT exist before Phase 6.
-  4. PRD §8.1 names `mitt` for the event bus and PRD §7.3 relies on Matter.js bundled with
-     Phaser 4. Both are treated as pre-justified dependencies (the PRD is the justification).
-     Any other dependency needs a justification in its plan.
+Resolved PRD ↔ constitution point (from the 1.0.0 report):
+  - #1 (dev tuning panel vs. single source of tuning) is now settled by the amended
+    Principle V.
 
-Follow-up TODOs: none. Ratification date is set to the date of first adoption (2026-09-26).
+Still-open PRD ↔ constitution points (Governance rule 2):
+  - PRD §8.3 `SimConfig` is { type, mode, seed, assist } and has no tuning field. Principle V
+    now requires tuning in the sim config. The PRD needs a matching update (or the plan must
+    record the deviation).
+  - PRD §8.6 `SaveV1` tiles and PRD §9.2 run submission carry only `tuningVersion`. That is
+    fine for default-tuning runs; confirm that saved and ranked runs always use defaults.
+  - 1.0.0 points #2–#4 (dev-only telemetry, no apps/api before Phase 6, mitt and Matter.js
+    pre-justified) remain as written. Confirm.
+
+Compliance check of existing specs:
+  - specs/001-whitebox-core-loop/spec.md is NOT fully compliant:
+    - FR-041 and the "Run Export" entity list only the tuning version. They MUST include the
+      complete tuning values.
+    - FR-039's example ("a tuning version that does not match") is now insufficient on its
+      own; overridden runs are replayable via the embedded values.
+    - The "Run Config" entity has no tuning values; it MUST include them.
+    - FR-038 SHOULD state that the panel overrides in memory only and never writes files.
+    - The "Tuning overrides" assumption refers to the old reading of Principle V.
+
+Follow-up TODOs: none.
 -->
 
 # Skyline Stacker Constitution
@@ -134,19 +132,33 @@ tests catch an off-by-one at `|d| = 50` or a silent determinism drift.
 
 ### V. Single Source of Tuning
 
-- Every gameplay number (PRD §7.1, §7.2, and any new one) MUST live in
-  `packages/sim/src/tuning.ts`, exported together with a `TUNING_VERSION` string.
+- `packages/sim/src/tuning.ts` is the single source of **default** tuning values. Every
+  gameplay number (PRD §7.1, §7.2, and any new one) MUST have its default defined there,
+  exported together with a `TUNING_VERSION` string.
+- The simulation MUST receive its tuning values as part of its config (a complete tuning
+  object). Simulation code MUST read gameplay numbers only from that object, never directly
+  from `tuning.ts` constants or any other source. Callers that do not override tuning MUST
+  pass the `tuning.ts` defaults.
 - Gameplay numeric literals MUST NOT appear anywhere else in `packages/sim` or `apps/web`.
   Trivial constants (0, 1, −1, array indices, the 1000‰ unit, bit shifts defined by the PRD
   formulas) and pure render/UI styling values are exempt. Render values that mirror gameplay
-  (block visual height, tilt cap, camera clearance) MUST come from `tuning.ts`.
-- Any change to a tuning value MUST bump `TUNING_VERSION` and regenerate every golden fixture
-  in the same change.
-- Development-only runtime overrides (the PRD Phase 1 dev tuning panel) MAY inject modified
-  values. Such runs MUST NOT be committed as golden fixtures or saved as city towers.
+  (block visual height, tilt cap, camera clearance) MUST come from the run's tuning values.
+- Any change to a default tuning value MUST bump `TUNING_VERSION` and regenerate every golden
+  fixture in the same change.
+- In development builds only, the dev tuning panel MAY override tuning values in memory. It
+  MUST NEVER write to `tuning.ts` or any other source file. Production builds MUST NOT contain
+  any mechanism for overriding tuning.
+- Every exported run MUST include the complete tuning values it was played with (every value,
+  not a diff or only the version), plus `TUNING_VERSION`, so that any run, overridden or not,
+  can be replayed exactly.
+- Golden fixtures MUST use only the default values of the current `TUNING_VERSION`. A run
+  played with overridden values MUST NOT be committed as a golden fixture or saved as a city
+  tower.
 
-**Rationale**: Tuning is iterated heavily in Phase 2. One versioned file makes every balance
-change auditable and keeps replays tied to the rules they were played under.
+**Rationale**: Tuning is iterated heavily in Phase 2. Defaults in one versioned file keep every
+balance change auditable. Passing tuning through config lets designers experiment without
+editing source, and embedding the full values in each export means even an experimental run
+can be replayed exactly, for example to check a tester's "unfair miss" report.
 
 ### VI. Performance Budgets
 
@@ -259,4 +271,10 @@ code: mixing ‰ with su, or ticks with milliseconds.
 5. Compliance review: every plan's Constitution Check and every code review MUST verify
    compliance. Exceptions MUST be written down with a rationale and a removal condition.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
+**Version**: 1.1.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
+
+**Change log**:
+- 1.1.0 (2026-09-26): Principle V amended. `tuning.ts` holds default values; the sim receives
+  tuning through its config; the dev panel overrides only in memory in development builds;
+  exported runs embed complete tuning values; golden fixtures use current defaults only.
+- 1.0.0 (2026-09-26): Initial ratification.

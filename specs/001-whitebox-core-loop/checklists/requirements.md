@@ -44,3 +44,9 @@
   effects, sway at N = 0, Phase 1 in-canvas HUD, auto-pause only, deferred rotate overlay, dev
   tuning overrides per constitution Principle V).
 - Validation passed on the first iteration.
+- 2026-09-26 update: added FR-044–FR-048 (explicit run result; assist flag in config, exports,
+  replay and state hash), with matching acceptance scenarios and entities. Re-validated: all items
+  still pass.
+- 2026-09-26 update 2: aligned with constitution v1.1.0 Principle V (FR-038, FR-039, FR-041,
+  FR-043, new FR-049/FR-050, entities, assumptions); added FR-051 (Place Roof press is not a
+  drop); mode name `city` used throughout; header cleaned up. Re-validated: all items pass.

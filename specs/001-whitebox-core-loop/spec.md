@@ -1,6 +1,6 @@
 # Feature Specification: Phase 1 — Deterministic Whitebox Core Loop
 
-**Feature Branch**: `001-whitebox-core-loop` (no git repository yet; directory name only)
+**Feature Branch**: `001-whitebox-core-loop`
 
 **Created**: 2026-09-26
 
@@ -61,6 +61,9 @@ method, and confirm the final score equals the sum of floor population plus 20%,
 7. **Given** a block is falling, a spawn delay is running, or the game is paused, **When** the
    player presses a drop input, **Then** the input is discarded (not buffered). Held-key
    auto-repeat is ignored.
+8. **Given** a tower run ends in any way, **Then** it reports exactly one explicit result
+   (Completed, Built, or Game Over) with a final score and floor count. After that, the
+   simulation accepts no further inputs and its state no longer changes.
 
 ---
 
@@ -87,6 +90,10 @@ browser engines, and compare the score and hash with the committed values.
    and 144 Hz display rates, **Then** the recorded input logs and final hashes are identical.
 4. **Given** any sequence of steps and inputs, **When** state is inspected, **Then** every value is
    a safe integer and no error has been thrown.
+5. **Given** an exported run played with Steady Tower on, **When** it is replayed from the export,
+   **Then** the replay uses the recorded assist setting and reproduces the recorded result, score,
+   and hash. **Given** the same seed and input log replayed with the opposite assist setting,
+   **Then** the state hash differs.
 
 ---
 
@@ -94,7 +101,7 @@ browser engines, and compare the score and hash with the committed values.
 
 A player or developer picks any of the four tower types (Residential, Commercial, Office, Luxury)
 or Quick Play from a developer selector. Each type uses its own parameters (target floors, crane
-and sway periods, sway multiplier, population, block visual height, color). In tower modes, once
+and sway periods, sway multiplier, population, block visual height, color). In `city` mode, once
 the floor count reaches the type's early-roof minimum, a **Place Roof** control appears. Using it
 turns the swinging block into the roof, and a successful landing finishes the tower as Built with
 no bonus. Quick Play is endless on Residential parameters, with no roof, and ends only at 3
@@ -111,11 +118,14 @@ availability at and below the minimum, and confirm Quick Play has no roof and en
 1. **Given** N < minRoofFloors[type], **Then** Place Roof is unavailable. **Given**
    N ≥ minRoofFloors[type] with a block swinging (and the block is not already the roof),
    **Then** Place Roof is available.
-2. **Given** an early roof lands Perfect or Good, **Then** the run ends as Built and the score is
+2. **Given** Place Roof is available, **When** the player presses it with a pointer, **Then** the
+   swinging block becomes the roof and keeps swinging. The press is not also counted as a drop, so
+   only a `roof` input is logged for that press.
+3. **Given** an early roof lands Perfect or Good, **Then** the run ends as Built and the score is
    the floor population sum with no completion bonus.
-3. **Given** Quick Play, **Then** no roof ever spawns, Place Roof is never offered, and the run
+4. **Given** Quick Play, **Then** no roof ever spawns, Place Roof is never offered, and the run
    ends only at 3 strikes with score = sum of floor population.
-4. **Given** very long Quick Play runs, **Then** crane speed never exceeds 2000‰, sway amplitude
+5. **Given** very long Quick Play runs, **Then** crane speed never exceeds 2000‰, sway amplitude
    never exceeds 350 su, and play stays possible indefinitely.
 
 ---
@@ -139,15 +149,17 @@ the values.
 1. **Given** a run in progress, **When** `D` is pressed, **Then** the overlay toggles and all listed
    values update live.
 2. **Given** a development build, **When** a tuning value is edited and the run restarted, **Then**
-   the new run uses the edited value, and the run is marked as using overridden tuning.
+   the new run uses the edited value, its `tuningOverridden` flag is true, and the tuning source
+   file is unchanged.
 3. **Given** a production build, **Then** the tuning panel is not available.
 
 ---
 
 ### User Story 5 - Export a run for replay (Priority: P3)
 
-After a run, the developer downloads a JSON file with the run's config, seed, input log, final
-score, and state hash, so the run can be replayed, investigated, or promoted to a golden fixture.
+After a run, the developer downloads a JSON file with the run's config (including seed, assist,
+and the complete tuning values), input log, result, final score, and state hash, so the run can be
+replayed exactly, investigated, or (if it used default tuning) promoted to a golden fixture.
 
 **Why this priority**: Supports debugging and fixture creation, and Phase 2 criterion 7 (replaying
 disputed misses).
@@ -222,15 +234,17 @@ disputed misses).
 
 **Roof and modes (PRD §3.8–3.9)**
 
-- **FR-011**: In tower modes, when N reaches targetFloors[type], the next spawned block MUST be the
+- **FR-011**: In `city` mode, when N reaches targetFloors[type], the next spawned block MUST be the
   roof.
-- **FR-012**: In tower modes, when N ≥ minRoofFloors[type] and a non-roof block is swinging, the
+- **FR-012**: In `city` mode, when N ≥ minRoofFloors[type] and a non-roof block is swinging, the
   player MUST be able to turn it into the roof (Place Roof). This MUST be logged as a `roof` input.
 - **FR-013**: The roof MUST land under normal tier rules. Perfect or Good finishes the run
   (Completed at target height with bonus, otherwise Built without bonus). A Miss costs a strike and
   spawns a new roof.
 - **FR-014**: Quick Play MUST use Residential parameters with no target, no roof, and no bonus. It
   MUST end only at 3 strikes.
+- **FR-051**: A pointer press on the Place Roof control MUST NOT also count as a drop input. It
+  MUST produce only the `roof` request, even though the control sits over the game area.
 
 **Sway model (PRD §4)**
 
@@ -261,7 +275,7 @@ disputed misses).
   MUST be used only for the crane start phase at each spawn. Phase 1 generates the seed at run
   start on the client.
 - **FR-025**: Each run MUST record an ordered input log of `{ tick, type: 'drop' | 'roof' }`.
-- **FR-026**: Replaying (config, seed, input log) from tick 0 MUST reproduce the identical final
+- **FR-026**: Replaying (config including tuning values, seed, input log) from tick 0 MUST reproduce the identical final
   state. A state hash (32-bit FNV-1a over all state fields in a fixed, documented order) MUST be
   available for any state.
 - **FR-027**: The simulation MUST expose the event stream of PRD §8.3 (spawn, release, land, miss,
@@ -300,15 +314,41 @@ disputed misses).
 - **FR-037**: The `D` key MUST toggle a debug overlay showing: current tick, last offset (‰), last
   tier, sway target and current amplitude, lean, crane speed ‰, sensitivity ‰, stabilizer ‰,
   combo, and fps.
-- **FR-038**: Development builds MUST provide a tuning panel that edits every tuning value,
-  restarts the run with the edited values, and exports the current values as JSON. Production
-  builds MUST NOT include it.
-- **FR-039**: A run played with edited tuning values MUST be marked as such (for example, a tuning
-  version that does not match the committed one). It MUST NOT be usable as a golden fixture.
+- **FR-038**: Development builds MUST provide a tuning panel that edits every tuning value in
+  memory, restarts the run with the edited values, and exports the current values as JSON. It
+  MUST NEVER write to the tuning source file. Production builds MUST NOT include it or any other
+  way to override tuning.
+- **FR-039**: A run MUST carry an explicit `tuningOverridden` flag: true if any tuning value
+  differs from the defaults of the current tuning version, false otherwise. Overridden runs are
+  identified by this flag, not by a tuning version mismatch. A run with `tuningOverridden` true
+  MUST NOT be usable as a golden fixture.
 - **FR-040**: A developer selector MUST let the player start a run of any of the 4 tower types or
   Quick Play, with Steady Tower on or off.
 - **FR-041**: After a run, the developer MUST be able to download the run as JSON containing
-  config (type, mode, seed, assist), input log, final score, state hash, and tuning version.
+  config (type, mode, seed, assist), the complete tuning values the run was played with (every
+  value, not a diff), the tuning version, the `tuningOverridden` flag, input log, run result
+  (result, final score, floor count), and state hash.
+
+**Run result and configuration (forward compatibility with City mode, PRD §6.5)**
+
+- **FR-044**: Every run MUST end with exactly one explicit result: **Completed** (roof landed at
+  target height), **Built** (early roof landed), or **Game Over** (third strike). Quick Play runs
+  always end as Game Over. The result MUST include the final score and the final floor count.
+  For Completed, the final score includes the completion bonus. For Built and Game Over, it is
+  the sum of floor population.
+- **FR-045**: The run result MUST be readable from the final simulation state (and therefore from
+  any replay), not only from the event stream. Once a result is set, the simulation MUST reject
+  all further inputs and MUST NOT change state on further steps.
+- **FR-046**: The result, together with the run's config and input log, MUST contain everything a
+  later phase needs to place, keep, or reject a tower on a city tile (type, result, final score,
+  floor count, seed, assist, input log), so City mode can be added without changing the
+  simulation's rules or interface. How a Game Over affects a tile is City-mode behavior and is
+  out of scope here.
+- **FR-047**: The Steady Tower assist flag MUST be part of the run configuration, fixed for the
+  whole run. It MUST be included in run exports and MUST be applied during replay exactly as
+  recorded.
+- **FR-048**: The assist flag MUST be part of the hashed simulation state, so an assisted run and
+  an unassisted run with the same seed and inputs never share a state hash.
 
 **Tuning (PRD §7)**
 
@@ -316,12 +356,22 @@ disputed misses).
   together with a tuning version string, using exactly the PRD values. No gameplay number may be
   hard-coded anywhere else.
 - **FR-043**: Changing any committed tuning value MUST bump the tuning version and regenerate all
-  golden fixtures.
+  golden fixtures. Golden fixtures MUST use only the default values of the current tuning version.
+- **FR-049**: The simulation MUST receive its complete tuning values as part of the run config and
+  read gameplay numbers only from them. When no override is made, the config MUST carry the
+  defaults from the tuning source.
+- **FR-050**: Replaying an exported run MUST use the tuning values stored in the export, not the
+  current defaults. An export whose tuning version differs from the current one MUST still replay
+  exactly.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Run Config**: tower type (residential, commercial, office, luxury), mode (city/tower or
-  quick), seed (uint32), assist flag (Steady Tower).
+- **Run Config**: tower type (residential, commercial, office, luxury), mode (`city` or
+  `quick`), seed (uint32), assist flag (Steady Tower, fixed for the whole run), and the complete
+  tuning values for the run (defaults from the tuning source unless overridden in a development
+  build).
+- **Run Result**: the single explicit outcome of a finished run: Completed, Built, or Game Over,
+  plus final score and final floor count. Part of the final simulation state.
 - **Simulation State**: integer-only snapshot. Includes tick, run phase (swinging, falling, spawn
   delay, finished, game over), floor rest positions, floor count N, crane center, crane phase and
   increment, released block position, sway phase and increment, current and target sway
@@ -331,10 +381,14 @@ disputed misses).
 - **Input Log**: ordered list of input events for one run.
 - **Simulation Event**: presentation notification (spawn, release, land, miss, comboChanged,
   roofAvailable, finished, gameOver) with its data.
-- **Tuning Set**: all global and per-type gameplay values plus a tuning version string.
-- **Golden Fixture**: committed (config, input log) with expected score and hash. At least one
-  each for Completed, Early-roof, and Game-over runs.
-- **Run Export**: JSON file with config, input log, score, hash, and tuning version.
+- **Tuning Set**: all global and per-type gameplay values plus a tuning version string. The
+  tuning source holds the defaults; each run carries its own complete copy.
+- **Golden Fixture**: committed (config, input log) with expected score and hash, using only the
+  default tuning values of the current tuning version. At least one each for Completed,
+  Early-roof, and Game-over runs.
+- **Run Export**: JSON file with config (type, mode, seed, assist), complete tuning values,
+  tuning version, `tuningOverridden` flag, input log, run result (result, final score, floor
+  count), and hash.
 - **Sine Table**: 4096 Q15 integer entries with a committed checksum.
 
 ## Success Criteria *(mandatory)*
@@ -383,8 +437,8 @@ all of them pass.
   2.5D art and citizen reactions, audio, reduced-motion effects (there are no cosmetic motion
   effects to disable yet), backend and accounts, native mobile builds, and playtest telemetry
   (Phase 2).
-- **"City" mode in Phase 1**: "Tower mode" means a single tower of a chosen type with target
-  height and roof, as in City mode but with no grid. A game over simply ends the run; there is no
+- **`city` mode in Phase 1**: a single tower of a chosen type with target height and roof, played
+  under City mode rules but with no grid. A game over simply ends the run; there is no
   tile to lose.
 - **HUD**: Phase 1 draws a minimal HUD (FR-034) on the game canvas itself, since Vue arrives in
   Phase 3. It will be replaced by the DOM HUD in Phase 3.
@@ -401,7 +455,10 @@ all of them pass.
   letterboxes in any orientation.
 - **Reference devices**: the team has access to a Pixel 6a–class Android phone and a 120 Hz
   display to measure SC-010.
-- **Tuning overrides**: follow the constitution's reading of the dev tuning panel (Principle V):
-  overridden runs are marked and never become golden fixtures or saved towers.
-- **Dependencies**: the constitution (v1.0.0) applies in full. In particular, the sim may not use
+- **Tuning overrides**: follow constitution Principle V (v1.1.0). Overrides live in memory in
+  development builds only, are flagged with `tuningOverridden`, stay replayable through the
+  embedded tuning values, and never become golden fixtures or saved towers.
+- **PRD difference**: PRD §8.3 `SimConfig` has no tuning field. This spec adds one, as
+  constitution v1.1.0 requires; the PRD should be updated to match.
+- **Dependencies**: the constitution (v1.1.0) applies in full. In particular, the sim may not use
   third-party runtime packages, and later-phase technology may not be scaffolded early.
