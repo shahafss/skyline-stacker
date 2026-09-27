@@ -7,7 +7,8 @@ How to run the Phase 1 build and prove each success criterion. Interfaces are in
 
 - Node.js 22 LTS and pnpm 12 (`corepack enable` picks up the pinned version).
 - Playwright browsers: `pnpm exec playwright install --with-deps chromium webkit firefox`.
-- For SC-010: a Pixel 6a–class Android phone with Chrome and USB debugging, and a 120 Hz display.
+- For SC-010: an iPhone 11 with Safari on the same Wi-Fi network as the desktop, and desktop
+  Chrome with DevTools. A 120 Hz display is optional.
 
 ## Setup and run
 
@@ -39,9 +40,9 @@ The production build must not contain the tuning panel. Check that `T` does noth
 | SC-005 caps | `pnpm --filter @skyline/sim test -- caps` | All five caps hold |
 | SC-006 rules | `pnpm --filter @skyline/sim test -- rules` | All seven rules pass |
 | SC-007 determinism (Node) | `pnpm --filter @skyline/sim test -- golden` | Every fixture matches its score and hash; 1,000 replays give one hash |
-| SC-007 determinism (browsers) | `pnpm --filter @skyline/web test:e2e -- golden` | Same results in chromium, webkit and firefox projects |
-| SC-008 frame-rate independence | `pnpm --filter @skyline/web test -- loop` | 30/60/120/144 Hz give identical logs and hashes |
-| SC-009 input latency | `pnpm --filter @skyline/web test -- input` | Injected drop applied on tick + 1 |
+| SC-007 determinism (browsers) | `pnpm --filter @skyline/golden-harness test:e2e` | Same results in chromium, webkit and firefox projects |
+| SC-008 frame-rate independence | `pnpm --filter @skyline/web test -- loop-framerate` | 30/60/120/144 Hz give identical logs and hashes |
+| SC-009 input latency | `pnpm --filter @skyline/web test -- InputController` | Injected drop applied on tick + 1 |
 | Coverage (Principle IV) | `pnpm --filter @skyline/sim test:coverage` | Lines ≥ 90% |
 | All CI gates | `pnpm ci` | typecheck, lint, format check, purity, unit/fuzz/golden, coverage |
 
@@ -69,17 +70,30 @@ Run `pnpm dev`, then:
    - Expect `tuningOverridden: true` and the edited value in `config.tuning`.
    - Expect the replay to still match.
    - Expect `git status` to show `tuning.ts` unchanged.
+7. **Grayscale check** (constitution Principle VII): take a screenshot of the selector and of a
+   tower of each type with its roof. View them in grayscale (for example with the browser's
+   `filter: grayscale(1)` or an image viewer).
+   - Expect all four types to be told apart by pattern, roof shape, icon and name alone.
 
 ## Performance check (SC-010)
 
 1. Make a production build with the perf tools switched on, and serve it on the LAN:
    `VITE_PERF_TOOLS=1 pnpm build && pnpm --filter @skyline/web preview --host`. This keeps the
    optimized bundle but includes the bot and perf capture. The tuning panel stays excluded.
-2. On the Pixel 6a–class phone, open the game and press `4` (Luxury). Press `B` for the auto-drop
-   bot, then press `P` for a 60-second capture once the tower passes 50 floors.
-3. **Pass**: average ≥ 58 fps and no frame above 33 ms. Repeat on the 120 Hz display. **Pass**:
-   average ≥ 110 fps, with the debug overlay still showing 60 ticks per second.
-4. Record the results (device, browser version, numbers) in the phase completion notes.
+2. **iPhone 11 (Safari)**: open `http://<desktop-LAN-IP>:4173/?perf=luxury`. This starts a
+   Luxury run with the auto-drop bot and begins the 60-second capture automatically once the
+   tower passes 50 floors, because the phone has no keyboard for `4` / `B` / `P`. The report
+   appears on screen when the capture ends. Keep the phone plugged in, with Low Power Mode off.
+3. **Desktop Chrome, 4× CPU throttling** (stand-in for a mid-range Android phone): open DevTools
+   → Performance panel → CPU: **4× slowdown**. Keep DevTools open (the throttle only applies
+   while it is open), set the device toolbar to a 390×844 portrait viewport, and load
+   `http://localhost:4173/?perf=luxury`.
+4. **Pass on both**: average ≥ 58 fps and no frame above 33 ms over the 60-second capture.
+5. **Optional, only if a 120 Hz display is available**: run the same URL on it. **Pass**: average
+   ≥ 110 fps, with the debug overlay still showing 60 ticks per second. Without one, frame-rate
+   independence is still covered by the automated SC-008 test.
+6. Record the results (device, OS and browser version, throttle setting, numbers) in
+   `specs/001-whitebox-core-loop/validation.md`.
 
 ## Regenerating golden fixtures
 

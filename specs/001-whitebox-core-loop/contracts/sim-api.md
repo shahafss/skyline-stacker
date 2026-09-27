@@ -39,6 +39,7 @@ export type SimEvent =
   | { kind: 'miss'; tick: number; offset: number; strikes: number }
   | { kind: 'comboChanged'; combo: number; multiplier: number }
   | { kind: 'roofAvailable' }
+  | { kind: 'roofPlaced'; tick: number }                    // [ext] early roof applied this tick
   | { kind: 'finished'; result: 'completed' | 'built'; score: number; floors: number } // floors: [ext]
   | { kind: 'gameOver'; score: number; floors: number };                             // floors: [ext]
 
@@ -89,6 +90,8 @@ export const DEFAULT_TUNING: Readonly<TuningValues>;                // [ext]
 export const TICK_RATE: 60;
 export const BLOCK_WIDTH: 1000;
 export const MAX_TICKS_PER_FRAME: number;
+export const Q15_SCALE: 32768;                                      // [ext] fixed engine constant
+export const SWAY_SMOOTHING_DIVISOR: 16;                            // [ext] fixed engine constant
 export function isDefaultTuning(t: TuningValues): boolean;          // [ext]
 export function cloneTuning(t: TuningValues): TuningValues;         // [ext] for the dev panel
 
@@ -96,6 +99,12 @@ export function cloneTuning(t: TuningValues): TuningValues;         // [ext] for
 export class SimConfigError extends Error {}
 export class ReplayError extends Error { readonly tick: number }
 ```
+
+## Not public
+
+`sim.ts` also exports an internal `restoreSim(config, state, inputLog)`, used only by the
+test-only snapshot helper (`packages/sim/tests/helpers/snapshot.ts`). It is **not** re-exported
+from `index.ts`, and the package `exports` map exposes only `.`, so consumers cannot import it.
 
 ## Behavioral guarantees (tested)
 
@@ -109,4 +118,6 @@ export class ReplayError extends Error { readonly tick: number }
    (FR-045).
 5. **Assist sensitivity**: The same config and log with the opposite `assist` value always gives
    a different hash (FR-048).
-6. **Purity**: No function reads the clock, randomness outside mulberry32, or global state.
+6. **Roof placement**: When a `roof` input is applied, `step()` emits `roofPlaced` for that tick,
+   and `canPlaceRoof` is false from then on for the run.
+7. **Purity**: No function reads the clock, randomness outside mulberry32, or global state.

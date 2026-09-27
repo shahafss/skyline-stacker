@@ -35,8 +35,8 @@
   §7 to be treated as authoritative requirements. So the spec keeps the algorithms the PRD makes
   normative for determinism: the mulberry32 PRNG, the Q15 4096-entry sine table, the FNV-1a state
   hash, integer-only state, and the 60 Hz tick. It also names the browser engines (Chromium,
-  WebKit, Firefox) and the Pixel 6a reference device, because they are the measurement targets of
-  PRD §12. No frameworks, libraries, or code structure are named (Phaser, Matter.js, Vitest and
+  WebKit, Firefox) and the measurement devices (iPhone 11, desktop Chrome at 4× CPU throttling),
+  because they are the measurement targets of PRD §12. No frameworks, libraries, or code structure are named (Phaser, Matter.js, Vitest and
   Playwright are left to the plan).
 - **Audience**: the spec is written for the product owner and designer. Gameplay terms (su, ‰,
   tick) are defined in the PRD glossary (§2).
@@ -50,3 +50,13 @@
 - 2026-09-26 update 2: aligned with constitution v1.1.0 Principle V (FR-038, FR-039, FR-041,
   FR-043, new FR-049/FR-050, entities, assumptions); added FR-051 (Place Roof press is not a
   drop); mode name `city` used throughout; header cleaned up. Re-validated: all items pass.
+- 2026-09-27 update 3 (after constitution v1.2.0 and two /speckit-analyze runs):
+  - SC-010 now uses an iPhone 11 (Safari) and desktop Chrome at 4× CPU throttling, with the
+    120 Hz check optional. The reference-devices assumption was updated to match.
+  - FR-038 and User Story 4 refer to "the fixed engine constants (data-model §1.3)".
+  - FR-027 and the Simulation Event entity include `roofPlaced`.
+  - FR-028 requires a distinct pattern, roof shape and icon per type; User Story 3 scenario 6
+    adds the grayscale check.
+  - User Story 5 was reworded: exports are not promoted to golden fixtures.
+  - Status set to "Ready for implementation" once /speckit-analyze reported no critical issues.
+  - Re-validated: all items pass.
