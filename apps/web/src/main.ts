@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
+import { SelectScene } from './scenes/SelectScene';
 import { GameScene } from './scenes/GameScene';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -18,7 +19,7 @@ const config: Phaser.Types.Core.GameConfig = {
       enableSleeping: false,
     },
   },
-  scene: [BootScene, GameScene],
+  scene: [BootScene, SelectScene, GameScene],
 };
 
 new Phaser.Game(config);

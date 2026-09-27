@@ -751,10 +751,10 @@ without it also counting as a drop. The button hides as soon as the roof is plac
 
 ### Tests for User Story 3 (write first; they must fail)
 
-- [ ] T076 [P] [US3] Extend `apps/web/tests/unit/InputController.test.ts`. A pointer down whose
+- [X] T076 [P] [US3] Extend `apps/web/tests/unit/InputController.test.ts`. A pointer down whose
   hit list contains the Place Roof button calls `requestRoof()` only and never `requestDrop()`,
   whichever of the two guards fires first (FR-051, research R9).
-- [ ] T077 [P] [US3] Write `apps/web/tests/e2e/place-roof.spec.ts`.
+- [X] T077 [P] [US3] Write `apps/web/tests/e2e/place-roof.spec.ts`.
   - Start a Commercial run and use `window.__skyline` plus Space to reach 20 floors.
   - Click the Place Roof button.
   - Assert:
@@ -765,7 +765,7 @@ without it also counting as a drop. The button hides as soon as the roof is plac
 
 ### Implementation for User Story 3
 
-- [ ] T078 [US3] Implement `apps/web/src/scenes/SelectScene.ts`, following
+- [X] T078 [US3] Implement `apps/web/src/scenes/SelectScene.ts`, following
   [contracts/controls.md](./contracts/controls.md). **All text comes from `STRINGS` (T059).**
   - Five entries: Residential, Commercial, Office, Luxury, Quick Play. Each shows the type name,
     the type's `icon-<type>` and a color swatch.
@@ -778,7 +778,7 @@ without it also counting as a drop. The button hides as soon as the roof is plac
     and a `cloneTuning(DEFAULT_TUNING)`.
   - Register it as the first scene after Boot in `apps/web/src/main.ts`.
   - When a run ends, return to it with `Esc` or after the result banner.
-- [ ] T079 [US3] Add the Place Roof button to `apps/web/src/hud/Hud.ts`. Its label comes from
+- [X] T079 [US3] Add the Place Roof button to `apps/web/src/hud/Hud.ts`. Its label comes from
   `STRINGS` (T059).
   - It is an interactive canvas button.
   - Visibility:
@@ -788,7 +788,7 @@ without it also counting as a drop. The button hides as soon as the roof is plac
   - On `pointerdown` it calls `requestRoof()` then `event.stopPropagation()`.
   - Implement `isOverRoofButton(pointer)` in `apps/web/src/input/InputController.ts` using the
     pointer's hit list (the second guard).
-- [ ] T080 [US3] Update `apps/web/src/hud/Hud.ts` and `apps/web/src/render/TowerRenderer.ts` to
+- [X] T080 [US3] Update `apps/web/src/hud/Hud.ts` and `apps/web/src/render/TowerRenderer.ts` to
   use each type's `blockVisualHeight`, color, `floor-<type>`/`roof-<type>` textures and icon.
   Hide floors/target and the roof button in Quick Play. Show the ASSIST badge when
   `config.assist`.
@@ -805,7 +805,7 @@ golden harness (Phase 5).
 
 **Independent Test**: `pnpm --filter @skyline/web test -- loop-framerate` passes.
 
-- [ ] T081 [US2] Write `apps/web/tests/unit/loop-framerate.test.ts` (SC-008).
+- [X] T081 [US2] Write `apps/web/tests/unit/loop-framerate.test.ts` (SC-008).
   - For 30, 60, 120 and 144 Hz, drive `FixedStepLoop` plus a real sim with deltas of
     `1000 / hz` ms for a scripted run.
   - Scripted inputs are injected between frames when `sim.getState().tick === T − 1` for a fixed
@@ -1122,3 +1122,18 @@ spec.md, plan.md, the existing tasks, and the constitution. This phase does not 
   `blockVisualHeight` tuning. Delete the field and its assignment per plan.md's `apps/web`
   render config decision (renderConfig.ts as the single source of styling constants)
   (contradicts).
+
+---
+
+## Phase 13: Convergence
+
+**Purpose**: Remediation found by a second `/speckit-converge` pass, run after Phases 6–8
+(T057–T081) were implemented. This phase does not re-list T096 above, which remains outstanding
+from the prior pass.
+
+- [ ] T097 Document the `Esc` key in
+  [contracts/controls.md](./contracts/controls.md)'s "Gameplay input" table: pressing `Esc` in
+  `GameScene` returns to the run selector at any time (`apps/web/src/scenes/GameScene.ts`,
+  `keydown-ESC` → `returnToSelect()`), implemented per T078 ("return to it with Esc or after the
+  result banner"), but the committed control contract has no row for it. Add a row documenting
+  this control so the contract matches the implemented behavior (partial).

@@ -4,6 +4,15 @@ async function waitForSkyline(page: Page): Promise<void> {
   await page.waitForFunction(() => window.__skyline !== undefined);
 }
 
+/** Loads the app and picks Residential from the selector (key `1`), landing in GameScene. */
+async function startResidentialRun(page: Page): Promise<void> {
+  await page.goto('/');
+  await page.waitForSelector('canvas');
+  await page.waitForTimeout(300);
+  await page.keyboard.press('1');
+  await waitForSkyline(page);
+}
+
 async function currentTick(page: Page): Promise<number> {
   return page.evaluate(() => window.__skyline?.getState().tick ?? 0);
 }
@@ -38,8 +47,7 @@ test.describe('playability', () => {
     browser,
   }) => {
     test.setTimeout(60_000);
-    await page.goto('/');
-    await waitForSkyline(page);
+    await startResidentialRun(page);
 
     // Wait until a block has actually spawned (swinging), so drop requests can be accepted.
     await page.waitForTimeout(700);
@@ -65,8 +73,7 @@ test.describe('playability', () => {
       viewport: { width: 390, height: 844 },
     });
     const touchPage = await touchContext.newPage();
-    await touchPage.goto('/');
-    await waitForSkyline(touchPage);
+    await startResidentialRun(touchPage);
     await touchPage.waitForTimeout(700);
 
     const touchTickBefore = await currentTick(touchPage);
@@ -79,8 +86,7 @@ test.describe('playability', () => {
 
   test('repeated drops eventually reach a result and show the HUD banner', async ({ page }) => {
     test.setTimeout(120_000);
-    await page.goto('/');
-    await waitForSkyline(page);
+    await startResidentialRun(page);
     await page.waitForTimeout(700);
 
     let result: Awaited<ReturnType<NonNullable<Window['__skyline']>['getResult']>> = null;

@@ -38,8 +38,19 @@ export class InputCore {
   }
 }
 
-/** Returns false; overridden in US3 once the Place Roof button exists (T079). */
+/** True when a pointer is currently over the Place Roof button (research R9, the second guard). */
 export type RoofButtonHitTest = (pointer: Phaser.Input.Pointer) => boolean;
+
+/**
+ * Builds a `RoofButtonHitTest` from Phaser's own hit list (`scene.input.hitTestPointer`), so the
+ * scene-level guard agrees with whatever object the button's own handler is attached to (T079).
+ */
+export function createRoofButtonHitTest(
+  scene: Phaser.Scene,
+  button: Phaser.GameObjects.GameObject,
+): RoofButtonHitTest {
+  return (pointer) => scene.input.hitTestPointer(pointer).includes(button);
+}
 
 /**
  * Binds `InputCore` to a Phaser scene's `pointerdown` and Space `keydown`. The scene-level pointer

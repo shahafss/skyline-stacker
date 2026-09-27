@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
-import type { RunResultKind, SimConfig, SimState } from '@skyline/sim';
+import type { RunResultKind, SimConfig, SimState, TowerSim } from '@skyline/sim';
+import { canPlaceRoof } from '@skyline/sim';
 import { iconTextureKey } from '../render/typeArt';
 import { HUD_PANEL_ALPHA, HUD_PANEL_COLOR, HUD_TEXT_COLOR } from '../render/renderConfig';
 import { formatCombo, formatFloors, STRINGS } from '../strings';
@@ -7,6 +8,10 @@ import { formatCombo, formatFloors, STRINGS } from '../strings';
 const PANEL_WIDTH = 260;
 const PANEL_HEIGHT = 190;
 const PANEL_MARGIN = 12;
+const ROOF_BUTTON_WIDTH = 220;
+const ROOF_BUTTON_HEIGHT = 60;
+const ROOF_BUTTON_COLOR = 0x2563eb;
+const ROOF_BUTTON_ALPHA = 0.9;
 
 function livesText(strikes: number, lives: number): string {
   const remaining = Math.max(0, lives - strikes);
@@ -34,9 +39,13 @@ export class Hud {
   private readonly resultScoreText: Phaser.GameObjects.Text;
   private readonly playAgainText: Phaser.GameObjects.Text;
 
+  private readonly roofButtonBg: Phaser.GameObjects.Rectangle;
+  private readonly roofButtonText: Phaser.GameObjects.Text;
+
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly config: SimConfig,
+    private readonly sim: TowerSim,
   ) {
     const x = PANEL_MARGIN;
     const y = PANEL_MARGIN;
@@ -117,6 +126,32 @@ export class Hud {
     this.playAgainText.setOrigin(0.5, 0.5);
     this.playAgainText.setVisible(false);
 
+    const roofX = this.scene.scale.width / 2;
+    const roofY = this.scene.scale.height - 100;
+    this.roofButtonBg = scene.add.rectangle(
+      roofX,
+      roofY,
+      ROOF_BUTTON_WIDTH,
+      ROOF_BUTTON_HEIGHT,
+      ROOF_BUTTON_COLOR,
+      ROOF_BUTTON_ALPHA,
+    );
+    this.roofButtonBg.setScrollFactor(0);
+    this.roofButtonBg.setDepth(150);
+    this.roofButtonBg.setVisible(false);
+    this.roofButtonBg.setInteractive({ useHandCursor: true });
+    this.roofButtonBg.on('pointerdown', this.handleRoofButtonDown);
+
+    this.roofButtonText = scene.add.text(roofX, roofY, STRINGS.hud.placeRoof, {
+      color: HUD_TEXT_COLOR,
+      fontSize: '22px',
+      fontFamily: 'monospace',
+    });
+    this.roofButtonText.setOrigin(0.5, 0.5);
+    this.roofButtonText.setScrollFactor(0);
+    this.roofButtonText.setDepth(151);
+    this.roofButtonText.setVisible(false);
+
     this.layoutResultTexts();
     this.refresh(null);
   }
@@ -166,6 +201,46 @@ export class Hud {
     this.resultScoreText.setVisible(false);
     this.playAgainText.setVisible(false);
   }
+
+  /**
+   * Re-checks `canPlaceRoof(sim)` and shows/hides the Place Roof button accordingly (T079). Safe
+   * to call after any event: eligibility (mode, phase, floors, `roofCommitted`, result) already
+   * covers every show/hide rule in contracts/controls.md.
+   */
+  updateRoofButtonVisibility(): void {
+    const visible = canPlaceRoof(this.sim);
+    this.roofButtonBg.setVisible(visible);
+    this.roofButtonText.setVisible(visible);
+  }
+
+  /** True while the Place Roof button is shown (used by the Playwright dev hook). */
+  isRoofButtonVisible(): boolean {
+    return this.roofButtonBg.visible;
+  }
+
+  /** The interactive object InputController's hit-list guard checks against (research R9). */
+  getRoofButtonGameObject(): Phaser.GameObjects.GameObject {
+    return this.roofButtonBg;
+  }
+
+  /** Screen-space bounds of the button while visible, for the Playwright dev hook; else `null`. */
+  getRoofButtonBounds(): { x: number; y: number; width: number; height: number } | null {
+    if (!this.roofButtonBg.visible) {
+      return null;
+    }
+    const bounds = this.roofButtonBg.getBounds();
+    return { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+  }
+
+  private readonly handleRoofButtonDown = (
+    _pointer: Phaser.Input.Pointer,
+    _localX: number,
+    _localY: number,
+    event: { stopPropagation: () => void },
+  ): void => {
+    this.sim.requestRoof();
+    event.stopPropagation();
+  };
 
   private iconType(): SimConfig['type'] {
     return this.config.type;

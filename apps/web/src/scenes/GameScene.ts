@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import type { RunResult, SimConfig, SimEvent, TowerSim } from '@skyline/sim';
 import { DEFAULT_TUNING, PHASE_FALLING, cloneTuning, createSim } from '@skyline/sim';
 import { FixedStepLoop, type RenderSnapshot } from '../loop/FixedStepLoop';
-import { InputController } from '../input/InputController';
+import { InputController, createRoofButtonHitTest } from '../input/InputController';
 import { TowerRenderer, floorCenterY, worldX } from '../render/TowerRenderer';
 import { CraneRenderer } from '../render/CraneRenderer';
 import { CameraRig, computeHookTargetY } from '../render/CameraRig';
@@ -16,7 +16,7 @@ export interface GameSceneData {
   config?: SimConfig;
 }
 
-function randomSeed(): number {
+export function randomSeed(): number {
   const array = new Uint32Array(1);
   crypto.getRandomValues(array);
   return array[0] ?? 0;
@@ -97,13 +97,18 @@ export class GameScene extends Phaser.Scene {
     this.missFx = new MissFx(this, this.runConfig.type, this.towerRenderer.blockHeightPx);
     this.collapseFx = new CollapseFx(this);
     this.particles = new Particles(this);
-    this.hud = new Hud(this, this.runConfig);
+    this.hud = new Hud(this, this.runConfig, this.sim);
     this.hud.refresh(this.sim.getState());
+    this.hud.updateRoofButtonVisibility();
 
     this.inputController = new InputController(this, this.sim);
+    this.inputController.setRoofButtonHitTest(
+      createRoofButtonHitTest(this, this.hud.getRoofButtonGameObject()),
+    );
 
-    this.input.on('pointerdown', this.maybeRestart);
-    this.input.keyboard?.on('keydown-SPACE', this.maybeRestart);
+    this.input.on('pointerdown', this.maybeReturnToSelect);
+    this.input.keyboard?.on('keydown-SPACE', this.maybeReturnToSelect);
+    this.input.keyboard?.on('keydown-ESC', this.returnToSelect);
 
     this.loop = new FixedStepLoop({
       step: () => this.sim.step(),
@@ -123,6 +128,8 @@ export class GameScene extends Phaser.Scene {
         getInputLog: () => this.sim.getInputLog(),
         getResult: () => this.sim.getResult(),
         isResultVisible: () => this.hud.isResultVisible(),
+        isRoofButtonVisible: () => this.hud.isRoofButtonVisible(),
+        getRoofButtonBounds: () => this.hud.getRoofButtonBounds(),
       };
     }
 
@@ -177,6 +184,7 @@ export class GameScene extends Phaser.Scene {
     if (events.length === 0) {
       return;
     }
+    this.hud.updateRoofButtonVisibility();
     let refreshHud = false;
     for (const event of events) {
       switch (event.kind) {
@@ -242,12 +250,15 @@ export class GameScene extends Phaser.Scene {
     this.particles.collapseDebris(worldX(state.lean), y);
   }
 
-  private readonly maybeRestart = (): void => {
+  private readonly maybeReturnToSelect = (): void => {
     const result: RunResult | null = this.sim.getResult();
     if (result === null) {
       return;
     }
-    const nextConfig: SimConfig = { ...this.runConfig, seed: randomSeed() };
-    this.scene.restart({ config: nextConfig } satisfies GameSceneData);
+    this.returnToSelect();
+  };
+
+  private readonly returnToSelect = (): void => {
+    this.scene.start('Select');
   };
 }

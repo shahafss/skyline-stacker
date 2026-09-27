@@ -6,7 +6,7 @@ export const PARTICLE_TEXTURE_DUST = 'dust';
 export const PARTICLE_TEXTURE_SPARK = 'spark';
 export const PARTICLE_TEXTURE_DEBRIS = 'debris';
 
-/** Generates every whitebox texture (particles and per-type art), then starts `GameScene`. */
+/** Generates every whitebox texture (particles and per-type art), then starts `SelectScene`. */
 export class BootScene extends Phaser.Scene {
   constructor() {
     super('Boot');
@@ -15,7 +15,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     this.generateParticleTextures();
     generateTypeArt(this);
-    this.scene.start('Game');
+    this.scene.start('Select');
   }
 
   private generateParticleTextures(): void {

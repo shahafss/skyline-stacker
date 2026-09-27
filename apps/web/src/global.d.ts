@@ -8,5 +8,7 @@ interface Window {
     getInputLog: () => readonly import('@skyline/sim').InputEvent[];
     getResult: () => import('@skyline/sim').RunResult | null;
     isResultVisible: () => boolean;
+    isRoofButtonVisible: () => boolean;
+    getRoofButtonBounds: () => { x: number; y: number; width: number; height: number } | null;
   };
 }
