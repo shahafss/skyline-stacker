@@ -416,37 +416,72 @@ Capacitor configuration lives in `/apps/web` from v1.2.
 type TowerType = 'residential' | 'commercial' | 'office' | 'luxury';
 type Mode = 'city' | 'quick';
 
+interface TuningValues {
+  global: GlobalTuning;                     // every §7.1 value except the fixed engine constants
+  types: Record<TowerType, TypeTuning>;     // every §7.2 value (colors are render styling)
+}
+
 interface SimConfig {
   type: TowerType;          // 'residential' for Quick Play
   mode: Mode;
   seed: number;             // uint32
-  assist: boolean;          // Steady Tower
+  assist: boolean;          // Steady Tower; fixed for the run and included in the state hash
+  tuning: TuningValues;     // complete values; defaults are DEFAULT_TUNING from tuning.ts
 }
+
+type RunResultKind = 'completed' | 'built' | 'gameOver';
+interface RunResult { result: RunResultKind; score: number; floors: number }
 
 type SimEvent =
   | { kind: 'spawn'; tick: number; isRoof: boolean }
   | { kind: 'release'; tick: number; x: number }
-  | { kind: 'land'; tick: number; tier: 'perfect' | 'good'; offset: number; floor: number; pop: number }
+  | { kind: 'land'; tick: number; tier: 'perfect' | 'good'; offset: number; floor: number; pop: number; roof: boolean }
   | { kind: 'miss'; tick: number; offset: number; strikes: number }
   | { kind: 'comboChanged'; combo: number; multiplier: number }
   | { kind: 'roofAvailable' }
-  | { kind: 'finished'; result: 'completed' | 'built'; score: number }
-  | { kind: 'gameOver'; score: number };
+  | { kind: 'finished'; result: 'completed' | 'built'; score: number; floors: number }
+  | { kind: 'gameOver'; score: number; floors: number };
 
 interface TowerSim {
-  step(): SimEvent[];               // advance exactly one tick
+  step(): readonly SimEvent[];      // advance exactly one tick; the array is reused until the next call
   requestDrop(): boolean;           // false if not accepted
   requestRoof(): boolean;           // false if not eligible
-  getState(): Readonly<SimState>;   // integer-only snapshot
+  getState(): Readonly<SimState>;   // integer-only, live read-only state
   getInputLog(): readonly InputEvent[];
+  getResult(): RunResult | null;    // null while the run is in progress
+  getConfig(): Readonly<SimConfig>;
 }
 
-function createSim(config: SimConfig): TowerSim;
-function replay(config: SimConfig, log: readonly InputEvent[]): { state: SimState; hash: number; events: SimEvent[] };
+function createSim(config: SimConfig): TowerSim;   // throws SimConfigError on invalid config
+function replay(config: SimConfig, log: readonly InputEvent[]):
+  { state: SimState; hash: number; events: SimEvent[]; result: RunResult | null };  // throws ReplayError
 function hashState(state: SimState): number;
+
+// Presentation helpers (pure; read state, never write it)
+function floorDisplayX(state: Readonly<SimState>, i: number): number;
+function canPlaceRoof(sim: TowerSim): boolean;
+
+// Tuning and versions
+const TUNING_VERSION: string;
+const SIM_VERSION: string;
+const DEFAULT_TUNING: Readonly<TuningValues>;
+const TICK_RATE: 60;                 // fixed engine constant
+const BLOCK_WIDTH: 1000;             // fixed engine constant
+const MAX_TICKS_PER_FRAME: number;   // fixed engine constant
+function isDefaultTuning(t: TuningValues): boolean;
+function cloneTuning(t: TuningValues): TuningValues;
+
+// Errors
+class SimConfigError extends Error {}
+class ReplayError extends Error { readonly tick: number }
 ```
 
-`requestDrop` and `requestRoof` queue the input. It is applied, and logged with the tick number, during the next `step()`.
+- `requestDrop` and `requestRoof` queue the input. It is applied, and logged with the tick number, during the next `step()`.
+- **Tuning:** `SimConfig.tuning` always holds the complete tuning values. `TICK_RATE`, `BLOCK_WIDTH` and `MAX_TICKS_PER_FRAME` are fixed engine constants and cannot be overridden.
+- **Run result:** Every run ends with exactly one result, which is part of the final state. Replaying a run reproduces it. After a result is set, `step()` returns no events and the state no longer changes.
+- **Replay:** `replay` runs until a result is set, or until `DROP_FALL_TICKS + 1` ticks after the last input. It throws `ReplayError` if the log is not strictly increasing, or if an input would be rejected on its tick.
+- **Roof landing:** A roof landing reports `roof: true`, `floor = N` and `pop = 0`.
+- The full contract is in `specs/001-whitebox-core-loop/contracts/sim-api.md`.
 
 ### 8.4 Vue ↔ Phaser bridge
 
@@ -593,7 +628,7 @@ Each phase is specified and built separately. A phase is complete only when all 
 - Build `packages/sim`: LUT generation script and committed table, PRNG, crane, drop and landing, tiers, scoring, combo, sway shear model, lean, stabilizer, strikes, roof (automatic and early), Quick Play, input log, `replay`, `hashState`, and `tuning.ts`.
 - Build `apps/web` with Vite + Phaser 4 only (no Vue): whitebox rendering, render interpolation, camera follow and culling, input handling, and visual-only Matter miss and collapse.
 - **Debug overlay** (toggle with the `D` key): current tick, last offset (‰), last tier, sway target and current amplitude, lean, crane speed ‰, sensitivity ‰, stabilizer ‰, combo, fps.
-- **Dev tuning panel** (development builds only): live-edit every `tuning.ts` value and restart the run, with export of the current values as JSON.
+- **Dev tuning panel** (development builds only): live-edit every `tuning.ts` value except the fixed engine constants (`TICK_RATE`, `BLOCK_WIDTH`, `MAX_TICKS_PER_FRAME`) and restart the run, with export of the current values as JSON. Edits stay in memory and never change `tuning.ts`.
 - **Dev type selector:** play any of the 4 tower types, or Quick Play.
 - **Run export:** download the last run's `(config, inputLog, score, hash)` as JSON.
 
@@ -682,6 +717,7 @@ Each phase is specified and built separately. A phase is complete only when all 
 - Reduced Motion disables every effect listed in §10.4.
 - The initial download is ≤ 5 MB compressed.
 - All Phase 1 performance criteria still pass with final art.
+- The debug overlay (`D`) is disabled or hidden in public production builds before release. Run export may stay available.
 
 ### Phase 6 — Backend and Leaderboards (v1.1)
 

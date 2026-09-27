@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skyline-stacker.local/schemas/run-export-v1.json",
+  "title": "Skyline Stacker run export (also used for golden fixtures)",
+  "description": "Everything needed to replay a run exactly (FR-041, FR-050). A golden fixture is an export with tuningOverridden = false, tuningVersion equal to the current TUNING_VERSION, and config.tuning deep-equal to DEFAULT_TUNING.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "exportVersion", "simVersion", "tuningVersion", "tuningOverridden", "config", "inputLog", "result", "hash"],
+  "properties": {
+    "format": { "const": "skyline-stacker/run" },
+    "exportVersion": { "const": 1 },
+    "simVersion": { "type": "string", "minLength": 1 },
+    "tuningVersion": { "type": "string", "minLength": 1 },
+    "tuningOverridden": { "type": "boolean" },
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "mode", "seed", "assist", "tuning"],
+      "properties": {
+        "type": { "enum": ["residential", "commercial", "office", "luxury"] },
+        "mode": { "enum": ["city", "quick"] },
+        "seed": { "$ref": "#/$defs/uint32" },
+        "assist": { "type": "boolean" },
+        "tuning": { "$ref": "#/$defs/tuning" }
+      },
+      "if": { "properties": { "mode": { "const": "quick" } } },
+      "then": { "properties": { "type": { "const": "residential" } } }
+    },
+    "inputLog": {
+      "type": "array",
+      "description": "Strictly increasing ticks; at most one input per tick.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tick", "type"],
+        "properties": {
+          "tick": { "type": "integer", "minimum": 1 },
+          "type": { "enum": ["drop", "roof"] }
+        }
+      }
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "score", "floors"],
+      "properties": {
+        "result": { "enum": ["completed", "built", "gameOver"] },
+        "score": { "type": "integer", "minimum": 0 },
+        "floors": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "hash": { "$ref": "#/$defs/uint32" }
+  },
+  "$defs": {
+    "uint32": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+    "int": { "type": "integer" },
+    "tuning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["global", "types"],
+      "properties": {
+        "global": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "CRANE_AMPLITUDE", "DROP_FALL_TICKS", "SPAWN_DELAY_TICKS", "PERFECT_MAX", "GOOD_MAX",
+            "LIVES", "CRANE_SPEED_PER_FLOOR", "CRANE_SPEED_CAP", "SENSITIVITY_STEP", "SENSITIVITY_CAP",
+            "BASE_SWAY_PER_FLOOR", "LEAN_GAIN", "SWAY_AMP_CAP", "STABILIZER_STEP", "STABILIZER_FLOOR",
+            "COMBO_STEP", "COMBO_CAP", "COMPLETION_BONUS", "BONUS_CAP", "ASSIST_SWAY",
+            "CAMERA_HOOK_CLEARANCE", "VISUAL_TILT_MAX_DEG"
+          ],
+          "properties": {
+            "CRANE_AMPLITUDE": { "$ref": "#/$defs/int" },
+            "DROP_FALL_TICKS": { "$ref": "#/$defs/int" },
+            "SPAWN_DELAY_TICKS": { "$ref": "#/$defs/int" },
+            "PERFECT_MAX": { "$ref": "#/$defs/int" },
+            "GOOD_MAX": { "$ref": "#/$defs/int" },
+            "LIVES": { "$ref": "#/$defs/int" },
+            "CRANE_SPEED_PER_FLOOR": { "$ref": "#/$defs/int" },
+            "CRANE_SPEED_CAP": { "$ref": "#/$defs/int" },
+            "SENSITIVITY_STEP": { "$ref": "#/$defs/int" },
+            "SENSITIVITY_CAP": { "$ref": "#/$defs/int" },
+            "BASE_SWAY_PER_FLOOR": { "$ref": "#/$defs/int" },
+            "LEAN_GAIN": { "$ref": "#/$defs/int" },
+            "SWAY_AMP_CAP": { "$ref": "#/$defs/int" },
+            "STABILIZER_STEP": { "$ref": "#/$defs/int" },
+            "STABILIZER_FLOOR": { "$ref": "#/$defs/int" },
+            "COMBO_STEP": { "$ref": "#/$defs/int" },
+            "COMBO_CAP": { "$ref": "#/$defs/int" },
+            "COMPLETION_BONUS": { "$ref": "#/$defs/int" },
+            "BONUS_CAP": { "$ref": "#/$defs/int" },
+            "ASSIST_SWAY": { "$ref": "#/$defs/int" },
+            "CAMERA_HOOK_CLEARANCE": { "$ref": "#/$defs/int" },
+            "VISUAL_TILT_MAX_DEG": { "$ref": "#/$defs/int" }
+          }
+        },
+        "types": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["residential", "commercial", "office", "luxury"],
+          "properties": {
+            "residential": { "$ref": "#/$defs/typeTuning" },
+            "commercial": { "$ref": "#/$defs/typeTuning" },
+            "office": { "$ref": "#/$defs/typeTuning" },
+            "luxury": { "$ref": "#/$defs/typeTuning" }
+          }
+        }
+      }
+    },
+    "typeTuning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetFloors", "minRoofFloors", "cranePeriodTicks", "swayPeriodTicks", "swayMult", "perfectPop", "goodPop", "blockVisualHeight"],
+      "properties": {
+        "targetFloors": { "$ref": "#/$defs/int" },
+        "minRoofFloors": { "$ref": "#/$defs/int" },
+        "cranePeriodTicks": { "$ref": "#/$defs/int" },
+        "swayPeriodTicks": { "$ref": "#/$defs/int" },
+        "swayMult": { "$ref": "#/$defs/int" },
+        "perfectPop": { "$ref": "#/$defs/int" },
+        "goodPop": { "$ref": "#/$defs/int" },
+        "blockVisualHeight": { "$ref": "#/$defs/int" }
+      }
+    }
+  }
+}

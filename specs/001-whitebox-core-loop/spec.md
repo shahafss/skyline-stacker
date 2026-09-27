@@ -134,7 +134,8 @@ availability at and below the minimum, and confirm Quick Play has no roof and en
 
 A developer presses `D` to toggle a debug overlay showing current tick, last offset (‰), last
 tier, sway target and current amplitude, lean, crane speed ‰, sensitivity ‰, stabilizer ‰, combo,
-and fps. In development builds, a tuning panel lets them edit every tuning value, restart the run
+and fps. In development builds, a tuning panel lets them edit every tuning value except the three fixed
+engine constants, restart the run
 with the new values, and export the current values as JSON.
 
 **Why this priority**: Phase 2 tuning depends on these tools, but the game is playable without
@@ -314,8 +315,8 @@ disputed misses).
 - **FR-037**: The `D` key MUST toggle a debug overlay showing: current tick, last offset (‰), last
   tier, sway target and current amplitude, lean, crane speed ‰, sensitivity ‰, stabilizer ‰,
   combo, and fps.
-- **FR-038**: Development builds MUST provide a tuning panel that edits every tuning value in
-  memory, restarts the run with the edited values, and exports the current values as JSON. It
+- **FR-038**: Development builds MUST provide a tuning panel that edits every tuning value except
+  these three fixed engine constants (`TICK_RATE`, `BLOCK_WIDTH`, `MAX_TICKS_PER_FRAME`) in memory, restarts the run with the edited values, and exports the current values as JSON. It
   MUST NEVER write to the tuning source file. Production builds MUST NOT include it or any other
   way to override tuning.
 - **FR-039**: A run MUST carry an explicit `tuningOverridden` flag: true if any tuning value
