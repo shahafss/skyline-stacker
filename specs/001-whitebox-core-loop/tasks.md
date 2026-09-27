@@ -580,7 +580,7 @@ Playwright playability smoke test passes in chromium.
 
 ### Setup for the web app
 
-- [ ] T057 [US1] Scaffold `apps/web`.
+- [X] T057 [US1] Scaffold `apps/web`.
   - `apps/web/package.json`: name `@skyline/web`; dependencies `phaser@~4.2.1` and
     `@skyline/sim: "workspace:*"`; devDependencies `vite@^8`, `@playwright/test@^1.63`.
   - Scripts: `dev`, `build`, `preview`, `test`, `test:e2e`.
@@ -589,7 +589,7 @@ Playwright playability smoke test passes in chromium.
     `process.env.VITE_PERF_TOOLS`.
   - `apps/web/index.html`: a full-viewport container with a dark background.
   - Add `apps/web` to the root `vitest.config.ts` projects.
-- [ ] T058 [P] [US1] Create `apps/web/src/render/typeArt.ts` (constitution Principle VII: types
+- [X] T058 [P] [US1] Create `apps/web/src/render/typeArt.ts` (constitution Principle VII: types
   are never told apart by color alone; FR-028).
   - `generateTypeArt(scene)` builds, with `Graphics.generateTexture`, a distinct whitebox
     **floor pattern**, **roof top shape** and **icon** per type:
@@ -601,7 +601,7 @@ Playwright playability smoke test passes in chromium.
   - Texture keys: `floor-<type>`, `roof-<type>`, `icon-<type>`. The patterns are drawn in
     white/gray so each type's tint (from `renderConfig.ts`) still applies.
   - Each floor pattern and roof shape must be identifiable in grayscale.
-- [ ] T059 [P] [US1] Create `apps/web/src/strings.ts` (constitution Principle VII: externalized UI
+- [X] T059 [P] [US1] Create `apps/web/src/strings.ts` (constitution Principle VII: externalized UI
   strings).
   - Export one frozen English table `STRINGS` holding **every** user-facing text in `apps/web`:
     - Tower type names; "Quick Play".
@@ -615,7 +615,7 @@ Playwright playability smoke test passes in chromium.
   - Components import from here. They must not contain literal user-facing strings.
   - **Exempt** (plan.md, interpretations): text in the dev-only tools (tuning panel T084, perf
     report T090), which are excluded from production builds and replaced in Phase 3.
-- [ ] T060 [US1] Create `apps/web/src/main.ts`, depending on T058.
+- [X] T060 [US1] Create `apps/web/src/main.ts`, depending on T058.
   - Phaser game config: `type: Phaser.AUTO` (WebGL with Canvas fallback), 720×1280,
     `scale.mode: FIT`, `autoCenter: CENTER_BOTH`.
   - Matter physics configured but enabled only in GameScene, with gravity y = 1.
@@ -626,7 +626,7 @@ Playwright playability smoke test passes in chromium.
 
 ### Tests for User Story 1 (write first; they must fail)
 
-- [ ] T061 [P] [US1] Write `apps/web/tests/unit/FixedStepLoop.test.ts`.
+- [X] T061 [P] [US1] Write `apps/web/tests/unit/FixedStepLoop.test.ts`.
   - At 60 Hz deltas, one step per frame.
   - A 100 ms delta runs exactly `MAX_TICKS_PER_FRAME` (5) steps and discards the rest.
   - `alpha = accumulator / TICK_MS` is in [0, 1).
@@ -634,7 +634,7 @@ Playwright playability smoke test passes in chromium.
   - `pause()` stops steps, and `resume()` resets the accumulator (FR-035).
   - It performs no allocations per `advance()`: check with a spy that the snapshot objects
     keep their identity.
-- [ ] T062 [P] [US1] Write `apps/web/tests/unit/InputController.test.ts` against the Phaser-free
+- [X] T062 [P] [US1] Write `apps/web/tests/unit/InputController.test.ts` against the Phaser-free
   `InputCore`.
   - A pointer down gives `requestDrop()`.
   - A Space keydown with `repeat: false` gives `requestDrop()`; `repeat: true` is ignored.
@@ -645,19 +645,19 @@ Playwright playability smoke test passes in chromium.
 
 ### Implementation for User Story 1
 
-- [ ] T063 [P] [US1] Implement `apps/web/src/loop/FixedStepLoop.ts` (no Phaser imports; research
+- [X] T063 [P] [US1] Implement `apps/web/src/loop/FixedStepLoop.ts` (no Phaser imports; research
   R8).
   - `advance(elapsedMs): number` (steps run), `alpha`, `pause()`, `resume()`.
   - Preallocated `prev`/`curr` `RenderSnapshot` objects.
   - An epsilon of `1e-6` on the `TICK_MS` comparison.
   - It calls a `stepSim()` callback and forwards events to `onEvents(events)` without copying.
   - TSDoc on the loop with units (ms, ticks), as Principle IX requires.
-- [ ] T064 [P] [US1] Implement `apps/web/src/input/InputController.ts`.
+- [X] T064 [P] [US1] Implement `apps/web/src/input/InputController.ts`.
   - The Phaser-free `InputCore` class (drop and roof requests, repeat filter).
   - A thin Phaser adapter that binds scene `pointerdown` and `keydown-SPACE` (reading
     `event.repeat`).
   - Leave a hook `isOverRoofButton(pointer)` returning false; it is used in US3.
-- [ ] T065 [P] [US1] Create `apps/web/src/render/renderConfig.ts` with styling values only
+- [X] T065 [P] [US1] Create `apps/web/src/render/renderConfig.ts` with styling values only
   (Principle V exemption):
   - `PX_PER_SU = 0.2` (a 1000 su block is 200 px, so ±1600 su fits the 720 px width).
   - `BASE_BLOCK_HEIGHT_PX = 90`.
@@ -665,7 +665,7 @@ Playwright playability smoke test passes in chromium.
     green, luxury `0xeab308` yellow.
   - Camera smoothing factors, HUD panel color `0x111827` (alpha 0.85) and HUD text `#ffffff`.
   - Type **names** are not here; they come from `strings.ts`.
-- [ ] T066 [US1] Implement `apps/web/src/render/TowerRenderer.ts`.
+- [X] T066 [US1] Implement `apps/web/src/render/TowerRenderer.ts`.
   - The foundation, plus a `FloorPool` of images sized `ceil(viewportHeight / minBlockPx) + 4`,
     using the run type's `floor-<type>` texture (T058) tinted with its color.
   - Each frame, assign images only to floors inside the camera view (culling, FR-031).
@@ -676,29 +676,29 @@ Playwright playability smoke test passes in chromium.
     run's tuning.
   - A landed roof uses `roof-<type>`.
   - Zero allocations per frame.
-- [ ] T067 [US1] Implement `apps/web/src/render/CraneRenderer.ts`.
+- [X] T067 [US1] Implement `apps/web/src/render/CraneRenderer.ts`.
   - The hook line and trolley at the interpolated crane X.
   - The attached block while swinging, drawn with `roof-<type>` when `state.isRoof = 1`.
   - While falling, the block at the frozen `releaseX`, with quadratic ease-in:
     `y = hookY + (towerTopY − hookY) × p²`, where
     `p = min(1, (tick − releaseTick + alpha) / DROP_FALL_TICKS)` (FR-030).
   - Hidden during the spawn delay.
-- [ ] T068 [US1] Implement `apps/web/src/render/CameraRig.ts`.
+- [X] T068 [US1] Implement `apps/web/src/render/CameraRig.ts`.
   - Vertical target keeps the hook `CAMERA_HOOK_CLEARANCE` block heights above the top floor.
   - Smooth pan after each landing.
   - Horizontal follow of `craneCenterX` with smoothing.
   - Interpolation with alpha, and no allocation.
-- [ ] T069 [P] [US1] Implement `apps/web/src/fx/MissFx.ts`. On a `miss` event, create a Matter
+- [X] T069 [P] [US1] Implement `apps/web/src/fx/MissFx.ts`. On a `miss` event, create a Matter
   rectangle body at the landing position with sideways velocity `sign(offset)` away from the
   tower and a small angular velocity. Remove it when it leaves the viewport. Its output is never
   read by the sim (Principle II).
-- [ ] T070 [P] [US1] Implement `apps/web/src/fx/CollapseFx.ts`. On `gameOver`, convert every
+- [X] T070 [P] [US1] Implement `apps/web/src/fx/CollapseFx.ts`. On `gameOver`, convert every
   **visible** floor image into a Matter body at its displayed position and tilt, with horizontal
   velocity from the sign of the current sway direction. Culled floors are not converted.
-- [ ] T071 [P] [US1] Implement `apps/web/src/fx/Particles.ts`: Phaser particle emitters,
+- [X] T071 [P] [US1] Implement `apps/web/src/fx/Particles.ts`: Phaser particle emitters,
   preallocated, for landing dust (`land`), Perfect sparks (`land` with tier `perfect`) and
   collapse debris (`gameOver`) (FR-033).
-- [ ] T072 [P] [US1] Implement `apps/web/src/hud/Hud.ts`, drawn on the canvas with a fixed camera
+- [X] T072 [P] [US1] Implement `apps/web/src/hud/Hud.ts`, drawn on the canvas with a fixed camera
   (FR-034). **All text comes from `STRINGS` (T059).**
   - Contents on a dark backing panel for AA contrast:
     - Score.
@@ -708,10 +708,10 @@ Playwright playability smoke test passes in chromium.
     - The type **name and `icon-<type>`**, and an "ASSIST" badge.
   - Update text objects only on relevant events (no per-frame string building).
   - A result banner (COMPLETED / BUILT / GAME OVER) plus the final score and the play-again hint.
-- [ ] T073 [P] [US1] Implement `apps/web/src/lifecycle/visibility.ts`. Listen to
+- [X] T073 [P] [US1] Implement `apps/web/src/lifecycle/visibility.ts`. Listen to
   `document.visibilitychange` and Phaser `game.events` `hidden`/`visible`. On hidden call
   `loop.pause()`; on visible call `loop.resume()`, which resets the accumulator (FR-035).
-- [ ] T074 [US1] Implement `apps/web/src/scenes/GameScene.ts`.
+- [X] T074 [US1] Implement `apps/web/src/scenes/GameScene.ts`.
   - Accept a `SimConfig` scene init param. The default is `city` / `residential` /
     `assist: false` / `DEFAULT_TUNING` clone, with the seed from
     `crypto.getRandomValues(new Uint32Array(1))[0]` (outside the sim).
@@ -722,7 +722,7 @@ Playwright playability smoke test passes in chromium.
   - After a result, Space or pointer restarts with a new seed.
   - In dev builds only, expose `window.__skyline = { getState, getInputLog, getResult }` for
     Playwright.
-- [ ] T075 [US1] Create `apps/web/playwright.config.ts`:
+- [X] T075 [US1] Create `apps/web/playwright.config.ts`:
   - `webServer`: `pnpm dev --port 5173`.
   - Projects chromium, webkit and firefox.
   - `testDir: tests/e2e`.
@@ -1106,3 +1106,19 @@ Task: "Implement apps/web/src/hud/Hud.ts"
 | T038–T041 | T039–T042 | T054 (main.ts) | T060 | T076–T077 | removed (moved to T053–T055) |
 | T042–T043 | T043–T044 | — | T058 (new: typeArt.ts), T059 (new: strings.ts) | T078–T081 | T082–T085 |
 | | | T055–T062 | T061–T068 | T082–T091 | T086–T095 |
+
+---
+
+## Phase 12: Convergence
+
+**Purpose**: Remediation found by `/speckit-converge` after auditing the implemented code against
+spec.md, plan.md, the existing tasks, and the constitution. This phase does not re-list Phase
+7–11 work (T076–T095), which is already tracked.
+
+- [ ] T096 Remove the dead `blockHeightPx` private field in `apps/web/src/scenes/GameScene.ts`
+  (declared at line 52, reassigned at line 72 from a duplicated `90` px magic number) — it is
+  never read; every real call site already uses `this.towerRenderer.blockHeightPx`, which is
+  correctly sourced from `renderConfig.BASE_BLOCK_HEIGHT_PX` and the run's
+  `blockVisualHeight` tuning. Delete the field and its assignment per plan.md's `apps/web`
+  render config decision (renderConfig.ts as the single source of styling constants)
+  (contradicts).
