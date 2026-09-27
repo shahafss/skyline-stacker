@@ -47,7 +47,7 @@ I2, D1, P1). The old → new ID mapping is at the end of this file.
 **Purpose**: Workspace, strict tooling, and the determinism guards (Principle I) that must exist
 before any sim code is written.
 
-- [ ] T001 Create the pnpm workspace root.
+- [X] T001 Create the pnpm workspace root.
   - `package.json`: `"private": true`, `"type": "module"`, `"packageManager": "pnpm@12.6.0"`,
     `"engines": { "node": ">=22" }`.
   - Scripts: `typecheck`, `lint`, `format`, `format:check`, `test`, `check:sim-purity`,
@@ -56,28 +56,28 @@ before any sim code is written.
   - `pnpm-workspace.yaml` with `packages/*` and `apps/*`.
   - `.gitignore` with node_modules, dist, coverage, playwright-report, test-results.
   - `.nvmrc` containing `22`.
-- [ ] T002 [P] Create `tsconfig.base.json`: `strict: true`, `noUncheckedIndexedAccess: true`,
+- [X] T002 [P] Create `tsconfig.base.json`: `strict: true`, `noUncheckedIndexedAccess: true`,
   `noImplicitOverride: true`, `target: "ES2022"`, `module: "ESNext"`,
   `moduleResolution: "bundler"`, `verbatimModuleSyntax: true`, `isolatedModules: true`.
   Add root devDependency `typescript@~6.0.0`. Do not use TS 7 (research R1).
-- [ ] T003 [P] Add Prettier.
+- [X] T003 [P] Add Prettier.
   - `.prettierrc`: `printWidth: 100`, `singleQuote: true`, `trailingComma: "all"`.
   - `.prettierignore` listing `packages/sim/src/sinLut.ts`, `pnpm-lock.yaml`, `coverage`, `dist`.
   - Root devDependency `prettier@^3.9`.
-- [ ] T004 Scaffold `packages/sim`.
+- [X] T004 Scaffold `packages/sim`.
   - `packages/sim/package.json`: name `@skyline/sim`, `"type": "module"`,
     `"exports": { ".": "./src/index.ts" }` (only `.`; internal modules are not importable),
     **no `dependencies` or `peerDependencies` field**.
   - Scripts: `test`, `test:fuzz` (`vitest run tests/fuzz`), `test:coverage`.
   - `packages/sim/tsconfig.json` extends `../../tsconfig.base.json`.
   - Placeholder `packages/sim/src/index.ts` (`export {};`).
-- [ ] T005 Add Vitest.
+- [X] T005 Add Vitest.
   - Root devDependencies `vitest@^5` and `@vitest/coverage-v8@^5`.
   - Root `vitest.config.ts` with `test.projects: ['packages/sim', 'scripts']`.
   - `packages/sim/vitest.config.ts` with the Node environment and coverage provider `v8`,
     `include: ['src/**']`, `exclude: ['src/sinLut.ts']`, `thresholds: { lines: 90 }`
     (Principle IV).
-- [ ] T006 Create `eslint.config.js` (flat config).
+- [X] T006 Create `eslint.config.js` (flat config).
   - Root devDependencies `eslint@^10`, `typescript-eslint@^8.70`, `eslint-config-prettier`.
   - Apply `typescript-eslint` `strictTypeChecked` with `projectService: true`,
     `@typescript-eslint/no-explicit-any: "error"`, and `eslint-config-prettier` last.
@@ -97,30 +97,30 @@ before any sim code is written.
       are allowed.
   - Add an override for `packages/sim/src/fixed.ts` that turns off only the `/` and `/=`
     selectors.
-- [ ] T007 Write `scripts/check-sim-purity.ts` (run with tsx; root devDependency `tsx@^4`).
+- [X] T007 Write `scripts/check-sim-purity.ts` (run with tsx; root devDependency `tsx@^4`).
   - Export `scanSource(text: string, fileName: string): Violation[]`, using plain regular
     expressions for every identifier and operator in T006. Strip comments first.
   - Export `checkSimPackageJson(json): Violation[]`. It fails on any `dependencies` or
     `peerDependencies`.
   - `main()` walks `packages/sim/src/**/*.ts`, prints `file:line: rule`, and exits with code 1 on
     any violation. `fixed.ts` may use `/` but nothing else.
-- [ ] T008 [P] Write `scripts/tests/check-sim-purity.test.ts` and `scripts/vitest.config.ts`.
+- [X] T008 [P] Write `scripts/tests/check-sim-purity.test.ts` and `scripts/vitest.config.ts`.
   Assert `scanSource` flags each forbidden item, including one hidden behind an
   `// eslint-disable-next-line` comment. Assert it accepts `Math.imul`, `Math.trunc`, `Math.abs`,
   `Math.min`, `Math.max` and `Math.sign`. Assert `checkSimPackageJson` rejects
   `{ "dependencies": { "x": "1" } }`.
-- [ ] T009 [P] Write `scripts/tests/eslint-sim-rules.test.ts`. Use the ESLint Node API
+- [X] T009 [P] Write `scripts/tests/eslint-sim-rules.test.ts`. Use the ESLint Node API
   (`new ESLint()` + `lintText(code, { filePath: 'packages/sim/src/__probe__.ts' })`, with
   `projectService.allowDefaultProject` for the probe path if needed). Assert that each R4 rule
   reports on a probe snippet (`Math.random()`, `Date.now()`, `2 ** 3`, `a / b`, `0.5`,
   `import x from 'lodash'`). Assert that `a / b` is allowed with `filePath` `packages/sim/src/fixed.ts`.
-- [ ] T010 Create `.github/workflows/ci.yml`: on push and pull_request, on ubuntu-latest with Node
+- [X] T010 Create `.github/workflows/ci.yml`: on push and pull_request, on ubuntu-latest with Node
   22 and pnpm via corepack.
   - Job `checks` steps: `pnpm install --frozen-lockfile`, then `pnpm typecheck`, `pnpm lint`,
     `pnpm format:check`, `pnpm check:sim-purity`, `pnpm test`, and
     `pnpm --filter @skyline/sim test:coverage`.
   - Later tasks add steps or jobs to this file (T048, T056, T087, T092, T093).
-- [ ] T011 Run `pnpm install`, commit `pnpm-lock.yaml`, and confirm `pnpm ci` passes on the empty
+- [X] T011 Run `pnpm install`, commit `pnpm-lock.yaml`, and confirm `pnpm ci` passes on the empty
   sim package. Also confirm that temporarily adding `Math.random()` to
   `packages/sim/src/index.ts` makes **both** `pnpm lint` and `pnpm check:sim-purity` fail
   (SC-001), then revert it.
@@ -137,7 +137,7 @@ Every user story depends on these.
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T012 Define all types in `packages/sim/src/types.ts`, following
+- [X] T012 Define all types in `packages/sim/src/types.ts`, following
   [contracts/sim-api.md](./contracts/sim-api.md) and [data-model.md](./data-model.md) §2–§3.
   - Types: `TowerType`, `Mode`, `GlobalTuning` (22 fields of data-model §1.1), `TypeTuning`
     (8 fields of §1.2), `TuningValues`, `SimConfig`, `SimState`, `InputEvent`, `RunResultKind`,
@@ -150,31 +150,31 @@ Every user story depends on these.
     `RESULT_BUILT = 2`, `RESULT_GAME_OVER = 3`; `TIER_NONE = 0`, `TIER_PERFECT = 1`,
     `TIER_GOOD = 2`, `TIER_MISS = 3`; `INPUT_NONE = 0`, `INPUT_DROP = 1`, `INPUT_ROOF = 2`.
   - Type codes: residential 0, commercial 1, office 2, luxury 3. Mode codes: city 0, quick 1.
-- [ ] T013 [P] Write `packages/sim/tests/unit/fixed.test.ts`. Check `div(7, 2) = 3`,
+- [X] T013 [P] Write `packages/sim/tests/unit/fixed.test.ts`. Check `div(7, 2) = 3`,
   `div(-7, 2) = -3`, `div(7, -2) = -3`, `div(0, 5) = 0`, `U32 = 4294967296`,
   `toU32(-1) = 4294967295`.
-- [ ] T014 [P] Implement `packages/sim/src/fixed.ts`: `div(a, b) = Math.trunc(a / b)`,
+- [X] T014 [P] Implement `packages/sim/src/fixed.ts`: `div(a, b) = Math.trunc(a / b)`,
   `U32 = 4294967296`, `toU32(v) = v >>> 0`, `abs`, `sign`, `min`, `max` (thin wrappers are
   allowed). This is the only sim file allowed to use `/` (research R3). Include TSDoc.
-- [ ] T015 [P] Write `scripts/gen-sin-lut.ts`. Compute `round(32767 × sin(2π k / 4096))` for
+- [X] T015 [P] Write `scripts/gen-sin-lut.ts`. Compute `round(32767 × sin(2π k / 4096))` for
   k = 0..4095. Write `packages/sim/src/sinLut.ts` as `export const SIN_LUT: readonly number[]`
   (frozen) with a "GENERATED — do not edit" header, and `export const SIN_LUT_CHECKSUM` (FNV-1a
   32-bit over the entries, each written as a 16-bit little-endian two's complement value). Wire
   it to the root script `gen:sin-lut`, run it, and commit the output.
-- [ ] T016 [P] Write `packages/sim/tests/unit/sinLut.test.ts` (SC-003).
+- [X] T016 [P] Write `packages/sim/tests/unit/sinLut.test.ts` (SC-003).
   - `SIN_LUT.length === 4096`.
   - Every entry is an integer in [−32767, 32767].
   - `SIN_LUT[0] = 0`, `[1024] = 32767`, `[2048] = 0`, `[3072] = −32767`.
   - The recomputed FNV-1a equals a checksum literal hard-coded in the test, **and** equals
     `SIN_LUT_CHECKSUM`.
-- [ ] T017 [P] Write `packages/sim/tests/unit/prng.test.ts`. Compare the sim's mulberry32
+- [X] T017 [P] Write `packages/sim/tests/unit/prng.test.ts`. Compare the sim's mulberry32
   (`advance`/`output`, uint32 output) with a reference mulberry32 written inline in the test, for
   seeds 0, 1 and 0xDEADBEEF over 1,000 draws. Assert the sequences for the same seed are
   identical and every output is in [0, 2^32).
-- [ ] T018 [P] Implement `packages/sim/src/prng.ts`: mulberry32 over uint32 using `Math.imul` and
+- [X] T018 [P] Implement `packages/sim/src/prng.ts`: mulberry32 over uint32 using `Math.imul` and
   `>>> 0`. To avoid allocation, expose `advance(state): number` (the next state) and
   `output(state): number` (uint32). Include TSDoc.
-- [ ] T019 [P] Write `packages/sim/tests/unit/tuning.test.ts`.
+- [X] T019 [P] Write `packages/sim/tests/unit/tuning.test.ts`.
   - Assert `DEFAULT_TUNING` equals a literal copy of the PRD §7.1 and §7.2 values:
     - Global: CRANE_AMPLITUDE 1100, DROP_FALL_TICKS 24, SPAWN_DELAY_TICKS 36, PERFECT_MAX 50,
       GOOD_MAX 250, LIVES 3, CRANE_SPEED_PER_FLOOR 20, CRANE_SPEED_CAP 2000,
@@ -190,16 +190,16 @@ Every user story depends on these.
     `MAX_TICKS_PER_FRAME = 5`, `SIN_LUT_SIZE = 4096`, `Q15_SCALE = 32768`,
     `SWAY_SMOOTHING_DIVISOR = 16`. None of them is a key of `TuningValues`.
   - Assert `DEFAULT_TUNING` is deeply frozen.
-- [ ] T020 Implement `packages/sim/src/tuning.ts`.
+- [X] T020 Implement `packages/sim/src/tuning.ts`.
   - Export `TUNING_VERSION = "1.0.0"`, the deeply frozen `DEFAULT_TUNING` with the T019 values,
     and the fixed engine constants (data-model §1.3) `TICK_RATE`, `BLOCK_WIDTH`, `MAX_TICKS_PER_FRAME`,
     `SIN_LUT_SIZE`, `Q15_SCALE`, `SWAY_SMOOTHING_DIVISOR` (data-model §1.3).
   - TSDoc on each value with its unit. These are the only gameplay literals in the repository
     (Principle V). The sim formulas use `Q15_SCALE` and `SWAY_SMOOTHING_DIVISOR` instead of
     bare `32768` and `16`.
-- [ ] T021 [P] Implement `packages/sim/src/version.ts`: `export const SIM_VERSION = "0.1.0"`. Its
+- [X] T021 [P] Implement `packages/sim/src/version.ts`: `export const SIM_VERSION = "0.1.0"`. Its
   TSDoc says to bump it whenever state fields, hash order or rules change.
-- [ ] T022 [P] Write `packages/sim/tests/unit/config.test.ts`.
+- [X] T022 [P] Write `packages/sim/tests/unit/config.test.ts`.
   - `createSim`/`validateConfig` throws `SimConfigError` for:
     - A missing tuning field.
     - A non-integer value (`1.5`).
@@ -212,13 +212,13 @@ Every user story depends on these.
   - `isDefaultTuning(cloneTuning(DEFAULT_TUNING))` is true, and false after changing any single
     field (loop over all fields).
   - `cloneTuning` returns a deep, unfrozen copy.
-- [ ] T023 Implement `packages/sim/src/config.ts`.
+- [X] T023 Implement `packages/sim/src/config.ts`.
   - `SimConfigError`, `validateConfig(config): void`, `isDefaultTuning(t)`, `cloneTuning(t)`.
   - Enforce the bounds table of data-model §1.1–§1.2 **verbatim**. Put it in a
     `TUNING_BOUNDS` constant next to `DEFAULT_TUNING` in `tuning.ts`, so all tuning numbers stay
     in one file.
   - Validate `seed` as an integer in [0, 4294967295] and `assist` as a boolean.
-- [ ] T024 [P] Write `packages/sim/tests/unit/hash.test.ts`.
+- [X] T024 [P] Write `packages/sim/tests/unit/hash.test.ts`.
   - FNV-1a of an empty stream = `0x811c9dc5`.
   - The 8-byte little-endian encoding (research R11) of `0`, `1`, `−1`, `2^32`, `−2^32 − 5` and
     `Number.MAX_SAFE_INTEGER` matches expected byte arrays.
@@ -226,7 +226,7 @@ Every user story depends on these.
   - Changing any single state field changes the hash (iterate over all field names in hash
     order).
   - Hashing the same state twice gives the same uint32.
-- [ ] T025 Implement `packages/sim/src/hash.ts`.
+- [X] T025 Implement `packages/sim/src/hash.ts`.
   - `hashState(state)` over the fields in data-model "Hash order" (`typeCode` … `lastTier`,
     with `restX` as length then elements).
   - FNV-1a with `Math.imul(h ^ byte, 0x01000193) >>> 0`, and each number written as
@@ -249,13 +249,13 @@ passes. A bot-driven 30-floor Residential run ends Completed with score = Σ pop
 
 ### Tests for User Story 1 (write first; they must fail)
 
-- [ ] T026 [P] [US1] Write the test-only snapshot helper `packages/sim/tests/helpers/snapshot.ts`
+- [X] T026 [P] [US1] Write the test-only snapshot helper `packages/sim/tests/helpers/snapshot.ts`
   (research R13, not part of the public API).
   - `snapshot(sim): SimSnapshot` deep-copies `getConfig()`, `getState()` (including a copy of
     `restX`) and `getInputLog()`.
   - `restore(snap): TowerSim` calls the internal `restoreSim(config, state, inputLog)` imported
     directly from `../../src/sim` (implemented in T037). It never imports from `index.ts`.
-- [ ] T027 [P] [US1] Write the test bot `packages/sim/tests/helpers/bot.ts`, using the T026
+- [X] T027 [P] [US1] Write the test bot `packages/sim/tests/helpers/bot.ts`, using the T026
   snapshot helper.
   - `findDropTick(sim, want: 'perfect' | 'good' | 'miss', side?: -1 | 1): number | null`.
     It snapshots `sim` once. For each future swinging tick, it restores the snapshot, steps to
@@ -265,7 +265,7 @@ passes. A bot-driven 30-floor Residential run ends Completed with score = Σ pop
   - `playScript(config, script: Array<'P' | 'G' | 'M' | 'R'>): { log, sim }` (R = early roof
     before the drop) drives one live sim using `findDropTick`.
   - Include TSDoc.
-- [ ] T028 [P] [US1] Write `packages/sim/tests/unit/crane.test.ts`.
+- [X] T028 [P] [US1] Write `packages/sim/tests/unit/crane.test.ts`.
   - At spawn, `craneCenterX = restX[N]` (excluding sway), and `cranePhase` equals the next
     mulberry32 output.
   - `craneSpeed = min(2000, 1000 + 20 × N)`.
@@ -273,10 +273,10 @@ passes. A bot-driven 30-floor Residential run ends Completed with score = Σ pop
   - Each swinging tick, `cranePhase = (cranePhase + craneIncrement) >>> 0` and
     `craneX = craneCenterX + div(CRANE_AMPLITUDE × SIN_LUT[cranePhase >>> 20], Q15_SCALE)`.
   - Formula-level cap: `craneSpeed` is 2000 for N = 50, 51 and 200.
-- [ ] T029 [P] [US1] Write `packages/sim/tests/unit/tiers.test.ts` (SC-004). Using
+- [X] T029 [P] [US1] Write `packages/sim/tests/unit/tiers.test.ts` (SC-004). Using
   `classifyOffset(d, tuning)` **and** an end-to-end sim check (bot T027), assert that
   d = 0, ±50 give Perfect; d = ±51, ±250 give Good; and d = ±251 gives Miss.
-- [ ] T030 [P] [US1] Write `packages/sim/tests/unit/sway.test.ts`.
+- [X] T030 [P] [US1] Write `packages/sim/tests/unit/sway.test.ts`.
   - Sway phase and S:
     - `swayPhase` stays 0 until floor 1 is placed, then advances by `div(2^32, swayPeriodTicks)`
       each tick with `>>> 0`.
@@ -291,7 +291,7 @@ passes. A bot-driven 30-floor Residential run ends Completed with score = Σ pop
   - While N = 0, sway and S are 0.
   - Formula-level caps: `sensitivity` = 2000 for `goodCount` ≥ 20; `recomputeSwayTarget` never
     returns more than 350.
-- [ ] T031 [P] [US1] Write `packages/sim/tests/unit/landing.test.ts`.
+- [X] T031 [P] [US1] Write `packages/sim/tests/unit/landing.test.ts`.
   - Perfect:
     - `restX[N+1] = restX[N]`, `combo += 1`, `comboMult = min(3000, 1000 + 250 × combo)`.
     - `pop = div(perfectPop × comboMult, 1000)`.
@@ -301,7 +301,7 @@ passes. A bot-driven 30-floor Residential run ends Completed with score = Σ pop
   - Miss: no floor, `strikes += 1`, `combo = 0`, stabilizer unchanged, `emit miss`.
   - Formula-level caps: `comboMult` is 3000 for combo 8, 9 and 20; `stabilizer` never drops
     below 500.
-- [ ] T032 [P] [US1] Write `packages/sim/tests/unit/sim-flow.test.ts`, following the
+- [X] T032 [P] [US1] Write `packages/sim/tests/unit/sim-flow.test.ts`, following the
   data-model §4 tick pipeline.
   - Start of run:
     - The first `step()` has tick 1 and emits `spawn`.
@@ -328,7 +328,7 @@ passes. A bot-driven 30-floor Residential run ends Completed with score = Σ pop
   - `step()` returns the same array instance on every call.
   - **Snapshot helper fidelity**: `restore(snapshot(sim))` followed by the same inputs reaches
     the same final hash as the original sim.
-- [ ] T033 [P] [US1] Write `packages/sim/tests/unit/caps.test.ts`, the SC-005 roll-up.
+- [X] T033 [P] [US1] Write `packages/sim/tests/unit/caps.test.ts`, the SC-005 roll-up.
   **End-to-end only**: each cap is checked by playing full runs through the public sim API with
   the bot, not by calling module functions.
   - Crane speed is 2000 at N ≥ 50.
@@ -339,21 +339,21 @@ passes. A bot-driven 30-floor Residential run ends Completed with score = Σ pop
 
 ### Implementation for User Story 1
 
-- [ ] T034 [P] [US1] Implement `packages/sim/src/crane.ts`: `spawnCrane(state, tuning, typeTuning)`
+- [X] T034 [P] [US1] Implement `packages/sim/src/crane.ts`: `spawnCrane(state, tuning, typeTuning)`
   and `advanceCrane(state)`, using the T028 formulas. It reads numbers only from the passed
   tuning and the fixed engine constants (FR-049). TSDoc with units.
-- [ ] T035 [P] [US1] Implement `packages/sim/src/sway.ts`: `advanceSway(state)` (phase,
+- [X] T035 [P] [US1] Implement `packages/sim/src/sway.ts`: `advanceSway(state)` (phase,
   smoothing with `SWAY_SMOOTHING_DIVISOR`, S with `Q15_SCALE`),
   `recomputeSwayTarget(state, tuning, typeTuning)` (PRD §4.3 in the exact written order of
   truncations), `updateLean(state)`, and the exported pure `floorDisplayX(state, i)`. TSDoc with
   units.
-- [ ] T036 [P] [US1] Implement `packages/sim/src/landing.ts`.
+- [X] T036 [P] [US1] Implement `packages/sim/src/landing.ts`.
   - `classifyOffset(d, tuning): TIER_*`.
   - `evaluateLanding(state, tuning, typeTuning, events)`, handling Perfect, Good, Miss and roof
     landings as in data-model §4 "evaluate landing".
   - `endRun(state, result, tuning, events)`, which sets `result`, `finalScore`,
     `phase = ENDED`, and emits `finished`/`gameOver` with `floors`.
-- [ ] T037 [US1] Implement `packages/sim/src/sim.ts`, depending on T034–T036.
+- [X] T037 [US1] Implement `packages/sim/src/sim.ts`, depending on T034–T036.
   - `createSim(config)`: call `validateConfig`, keep a private copy of the config (tuning via
     `cloneTuning`), and initialize every `SimState` field. Initial values: `phase = SPAWN_DELAY`,
     `phaseTimer = 0`, `restX = [0]`, `stabilizer = 1000`, `sensitivity = 1000`,
@@ -365,7 +365,7 @@ passes. A bot-driven 30-floor Residential run ends Completed with score = Σ pop
   - Internal `restoreSim(config, state, inputLog): TowerSim`, which builds a sim around copies
     of the given state and log. It is exported from `sim.ts` for the test helper only and
     **must not** be re-exported from `index.ts`.
-- [ ] T038 [US1] Export the public API from `packages/sim/src/index.ts`: types, code constants,
+- [X] T038 [US1] Export the public API from `packages/sim/src/index.ts`: types, code constants,
   `createSim`, `hashState`, `floorDisplayX`, tuning, fixed engine constants and version
   constants, `isDefaultTuning`, `cloneTuning`, `SimConfigError`. Do **not** export `restoreSim`.
   Run T026–T033 until they are green. Confirm `pnpm lint` and `pnpm check:sim-purity` pass.
@@ -384,7 +384,7 @@ Play rules are in the sim.
 
 ### Tests for User Story 3 (write first; they must fail)
 
-- [ ] T039 [P] [US3] Write `packages/sim/tests/unit/roof.test.ts`.
+- [X] T039 [P] [US3] Write `packages/sim/tests/unit/roof.test.ts`.
   - `requestRoof()`:
     - Returns false below `minRoofFloors` (N = 14 Residential) and true at N = 15 while
       swinging (SC-006).
@@ -402,18 +402,18 @@ Play rules are in the sim.
     mode. `canPlaceRoof(sim)` matches `requestRoof()` eligibility.
   - Once the automatic roof has spawned (N = target), `canPlaceRoof` is false and `roofPlaced` is
     never emitted.
-- [ ] T040 [P] [US3] Write `packages/sim/tests/unit/quickplay.test.ts`.
+- [X] T040 [P] [US3] Write `packages/sim/tests/unit/quickplay.test.ts`.
   - `quick` mode never spawns a roof and never emits `roofAvailable` or `roofPlaced`.
   - It ends only at 3 strikes with `result = 'gameOver'` and score = Σ pop.
   - A **300-floor** bot run (snapshot-based bot, T027) keeps `craneSpeed ≤ 2000` and
     `swayAmp ≤ 350`, and stays playable (the bot still finds Perfect ticks). The test must finish
     in under 30 s.
-- [ ] T041 [P] [US3] Write `packages/sim/tests/unit/types.test.ts`.
+- [X] T041 [P] [US3] Write `packages/sim/tests/unit/types.test.ts`.
   - For each of the 4 types: crane and sway increments come from `cranePeriodTicks` /
     `swayPeriodTicks`, `swayMult` scales the target, `perfectPop`/`goodPop` are used, and
     `targetFloors` triggers the automatic roof (Commercial 40, Office 50, Luxury 60).
   - Early roof minimums are 20 / 25 / 30.
-- [ ] T042 [P] [US3] Write `packages/sim/tests/unit/rules.test.ts`, the SC-006 roll-up.
+- [X] T042 [P] [US3] Write `packages/sim/tests/unit/rules.test.ts`, the SC-006 roll-up.
   **End-to-end only** (full runs through the public API with the bot). Check all seven rules:
   1. A Perfect snaps.
   2. A Good keeps its offset.
@@ -425,14 +425,14 @@ Play rules are in the sim.
 
 ### Implementation for User Story 3
 
-- [ ] T043 [US3] Add `requestRoof()` to `packages/sim/src/sim.ts`, with eligibility
+- [X] T043 [US3] Add `requestRoof()` to `packages/sim/src/sim.ts`, with eligibility
   `mode = city && phase = SWINGING && isRoof = 0 && floors ≥ minRoofFloors && pendingInput = 0
   && result = 0`.
   - Applying it in the step pipeline sets `isRoof = 1` and `roofCommitted = 1`, logs `roof`, and
     emits `{ kind: 'roofPlaced', tick }` (data-model §4).
   - Emit `roofAvailable` at spawn as in data-model §4.
   - Enforce the `quick` rules: no roof, residential tuning.
-- [ ] T044 [US3] Export `canPlaceRoof(sim)` (pure: it checks the same eligibility on
+- [X] T044 [US3] Export `canPlaceRoof(sim)` (pure: it checks the same eligibility on
   `getState()` and `getConfig()`) from `packages/sim/src/sim.ts` via
   `packages/sim/src/index.ts`. Make T039–T042 green.
 
@@ -453,7 +453,7 @@ finishes the simulation.
 
 ### Tests for User Story 2 (write first; they must fail)
 
-- [ ] T045 [P] [US2] Write `packages/sim/tests/unit/replay.test.ts`.
+- [X] T045 [P] [US2] Write `packages/sim/tests/unit/replay.test.ts`.
   - For bot-played runs of every type and Quick Play, `replay(sim.getConfig(),
     sim.getInputLog())` equals the live final hash, result and events.
   - Replay stops when the result is set, or `DROP_FALL_TICKS + 1` ticks after the last input.
@@ -463,12 +463,12 @@ finishes the simulation.
     - A drop logged on a tick where it would be rejected.
     - A `roof` logged in `quick` mode.
   - Replaying one log 1,000 times in one process gives one hash (SC-007, Node).
-- [ ] T046 [P] [US2] Write `packages/sim/tests/unit/assist.test.ts` (FR-047, FR-048).
+- [X] T046 [P] [US2] Write `packages/sim/tests/unit/assist.test.ts` (FR-047, FR-048).
   - `state.assist` is 1 when `config.assist` is true.
   - The same seed and log with the opposite `assist` value gives a different hash (check 50
     random logs).
   - With assist, `swayTarget` equals `div(targetWithoutAssist × 500, 1000)` before the cap.
-- [ ] T047 [P] [US2] Write `packages/sim/tests/unit/export.test.ts`.
+- [X] T047 [P] [US2] Write `packages/sim/tests/unit/export.test.ts`.
   - `createRunExport(sim)` returns every field of
     [contracts/run-export.schema.json](./contracts/run-export.schema.json):
     - `format: "skyline-stacker/run"`, `exportVersion: 1`, `simVersion`, `tuningVersion`.
@@ -480,7 +480,7 @@ finishes the simulation.
     `'office'`, a non-integer tuning value, and a hash outside uint32.
   - An export with overridden tuning replays to its recorded hash using its own tuning
     (FR-050).
-- [ ] T048 [P] [US2] Write the shared fuzz harness `packages/sim/tests/fuzz/harness.ts` and five
+- [X] T048 [P] [US2] Write the shared fuzz harness `packages/sim/tests/fuzz/harness.ts` and five
   files `packages/sim/tests/fuzz/fuzz-1.test.ts` … `fuzz-5.test.ts` (2,000 runs each, seed ranges
   disjoint) (SC-002, research R15).
   - Type and mode are chosen round-robin over the 4 types and Quick Play.
@@ -495,17 +495,17 @@ finishes the simulation.
 
 ### Implementation for User Story 2
 
-- [ ] T049 [US2] Implement `packages/sim/src/replay.ts`: `ReplayError` (with `tick`) and
+- [X] T049 [US2] Implement `packages/sim/src/replay.ts`: `ReplayError` (with `tick`) and
   `replay(config, log)`, following [contracts/sim-api.md](./contracts/sim-api.md). It returns
   `{ state, hash, events (copied), result }`. Export both from `packages/sim/src/index.ts`.
-- [ ] T050 [US2] Implement `packages/sim/src/export.ts`, pure with no I/O (data-model §8).
+- [X] T050 [US2] Implement `packages/sim/src/export.ts`, pure with no I/O (data-model §8).
   - Export the `RunExport` type, `createRunExport(sim): RunExport`, and
     `parseRunExport(value: unknown): RunExport`. Validation is hand-written against the schema,
     with no new dependency (Principle VIII).
   - Export them from `packages/sim/src/index.ts`.
   - Add these three items, marked `[ext]`, to
     `specs/001-whitebox-core-loop/contracts/sim-api.md`.
-- [ ] T051 [US2] Write `scripts/gen-golden.ts`, the fixture generator (research R13).
+- [X] T051 [US2] Write `scripts/gen-golden.ts`, the fixture generator (research R13).
   - Use the bot from `packages/sim/tests/helpers/bot.ts` with `DEFAULT_TUNING` only.
   - Write four fixtures to `packages/sim/tests/golden/fixtures/`:
     - `completed-residential.json`: 30 floors plus roof. Script includes ≥ 8 consecutive
@@ -517,7 +517,7 @@ finishes the simulation.
       `assist: true`.
   - Use fixed seeds and `createRunExport` for the file format.
   - Wire it to the root script `golden:regen`, run it, and commit the fixtures.
-- [ ] T052 [US2] Write `packages/sim/tests/golden/golden.test.ts` (SC-007, Node). For every
+- [X] T052 [US2] Write `packages/sim/tests/golden/golden.test.ts` (SC-007, Node). For every
   fixture:
   - It passes `parseRunExport`, `tuningOverridden === false`,
     `tuningVersion === TUNING_VERSION`, and `config.tuning` deep-equals `DEFAULT_TUNING`.
@@ -527,7 +527,7 @@ finishes the simulation.
 
 ### Cross-browser golden harness (Vite-only, no Phaser)
 
-- [ ] T053 [US2] Scaffold the test-only workspace package `packages/golden-harness` (research
+- [X] T053 [US2] Scaffold the test-only workspace package `packages/golden-harness` (research
   R14; plan Complexity Tracking).
   - `packages/golden-harness/package.json`: name `@skyline/golden-harness`, `"private": true`,
     `"type": "module"`; dependency `@skyline/sim: "workspace:*"`; devDependencies `vite@^8`,
@@ -542,18 +542,18 @@ finishes the simulation.
     - Replay each fixture and set `window.__goldenResults = [{ name, score, result, floors,
       hash, expected: { score, result, floors, hash } }]`.
   - It is never deployed and has no build step in CI.
-- [ ] T054 [US2] Create `packages/golden-harness/playwright.config.ts` and
+- [X] T054 [US2] Create `packages/golden-harness/playwright.config.ts` and
   `packages/golden-harness/tests/golden.spec.ts`.
   - `webServer`: `pnpm dev`, port 5174.
   - Projects chromium, webkit and firefox.
   - The spec opens `/`, waits for `window.__goldenResults`, and asserts every fixture's score,
     result, floors and hash equal the committed values (SC-007, browsers).
-- [ ] T055 [US2] Add a job `golden-browsers` to `.github/workflows/ci.yml`, right after the golden
+- [X] T055 [US2] Add a job `golden-browsers` to `.github/workflows/ci.yml`, right after the golden
   Node tests (`needs: checks`). It runs
   `pnpm exec playwright install --with-deps chromium webkit firefox` then
   `pnpm --filter @skyline/golden-harness test:e2e`. From this task on, every change to
   `packages/sim` must pass it before merge (constitution quality gate).
-- [ ] T056 [US2] Run `pnpm --filter @skyline/sim test:coverage`. Add unit tests in
+- [X] T056 [US2] Run `pnpm --filter @skyline/sim test:coverage`. Add unit tests in
   `packages/sim/tests/unit/` for any `packages/sim/src` lines left uncovered until lines ≥ 90%.
   Confirm TSDoc with units on every export in `packages/sim/src/` (Principle IX).
 

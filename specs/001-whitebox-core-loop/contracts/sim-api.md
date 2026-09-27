@@ -95,6 +95,23 @@ export const SWAY_SMOOTHING_DIVISOR: 16;                            // [ext] fix
 export function isDefaultTuning(t: TuningValues): boolean;          // [ext]
 export function cloneTuning(t: TuningValues): TuningValues;         // [ext] for the dev panel
 
+// ── Run export / golden fixtures (data-model §8) [ext] ─────────────────
+export interface RunExport {
+  format: 'skyline-stacker/run';
+  exportVersion: 1;
+  simVersion: string;
+  tuningVersion: string;
+  tuningOverridden: boolean;
+  config: SimConfig;
+  inputLog: InputEvent[];
+  result: RunResult;
+  hash: number;
+}
+/** Builds a RunExport from a finished sim. Throws if the run has no result yet. */
+export function createRunExport(sim: TowerSim): RunExport;
+/** Validates and parses an unknown value as a RunExport, by hand against the JSON Schema. */
+export function parseRunExport(value: unknown): RunExport;
+
 // ── Errors [ext] ──────────────────────────────────────────────────────
 export class SimConfigError extends Error {}
 export class ReplayError extends Error { readonly tick: number }
