@@ -828,7 +828,7 @@ golden harness (Phase 5).
 
 ### Tests for User Story 4 (write first; they must fail)
 
-- [ ] T082 [P] [US4] Write `apps/web/tests/unit/tuningPanelModel.test.ts` against a Phaser-free
+- [X] T082 [P] [US4] Write `apps/web/tests/unit/tuningPanelModel.test.ts` against a Phaser-free
   and DOM-free model in `apps/web/src/dev/tuningPanelModel.ts`.
   - It lists every `GlobalTuning` and `TypeTuning` field (22 + 4 × 8), and **excludes** all the
     fixed engine constants (data-model §1.3) (FR-038).
@@ -841,7 +841,7 @@ golden harness (Phase 5).
 
 ### Implementation for User Story 4
 
-- [ ] T083 [P] [US4] Implement `apps/web/src/dev/DebugOverlay.ts`, toggled with `D` (FR-037).
+- [X] T083 [P] [US4] Implement `apps/web/src/dev/DebugOverlay.ts`, toggled with `D` (FR-037).
   **Labels come from `STRINGS` (T059).**
   - Shows the current tick, last offset ‰ (`lastOffset`), last tier, sway target and current
     amplitude, lean, crane speed ‰, sensitivity ‰, stabilizer ‰, combo, and fps from
@@ -850,7 +850,7 @@ golden harness (Phase 5).
     `setText` only when that value changes, at most 10 times per second (Principle VI).
   - Present in every Phase 1 build (accepted; PRD Phase 5 requires hiding it before public
     release).
-- [ ] T084 [US4] Implement `apps/web/src/dev/tuningPanelModel.ts` and
+- [X] T084 [US4] Implement `apps/web/src/dev/tuningPanelModel.ts` and
   `apps/web/src/dev/TuningPanel.ts`, the minimal plain-DOM dev tool allowed before Phase 3
   (constitution Principle III v1.2.0).
   - `TuningPanel.ts` is a plain DOM form with `id="skyline-tuning-panel"` and the marker
@@ -863,7 +863,7 @@ golden harness (Phase 5).
     interpretations).
   - Load it only via `if (import.meta.env.DEV) { const m = await import('./dev/TuningPanel'); … }`
     from `apps/web/src/scenes/GameScene.ts` on key `T`.
-- [ ] T085 [US4] Write `scripts/check-prod-bundle.ts` and the root script `check:prod-bundle`.
+- [X] T085 [US4] Write `scripts/check-prod-bundle.ts` and the root script `check:prod-bundle`.
   - After `pnpm --filter @skyline/web build`, fail if any file in `apps/web/dist/` contains
     `skyline-tuning-panel` or `tuning-panel`.
   - Add `pnpm --filter @skyline/web build && pnpm check:prod-bundle` to

@@ -11,6 +11,8 @@ import { CollapseFx } from '../fx/CollapseFx';
 import { Particles } from '../fx/Particles';
 import { Hud } from '../hud/Hud';
 import { setupVisibilityAutoPause } from '../lifecycle/visibility';
+import { DebugOverlay, readDebugSnapshot } from '../dev/DebugOverlay';
+import type { TuningPanel } from '../dev/TuningPanel';
 
 export interface GameSceneData {
   config?: SimConfig;
@@ -49,6 +51,8 @@ export class GameScene extends Phaser.Scene {
   private particles!: Particles;
   private hud!: Hud;
   private inputController!: InputController;
+  private debugOverlay!: DebugOverlay;
+  private tuningPanel: TuningPanel | null = null;
   private blockHeightPx = 90;
   private removeVisibilityListener: (() => void) | null = null;
 
@@ -106,9 +110,13 @@ export class GameScene extends Phaser.Scene {
       createRoofButtonHitTest(this, this.hud.getRoofButtonGameObject()),
     );
 
+    this.debugOverlay = new DebugOverlay(this);
+
     this.input.on('pointerdown', this.maybeReturnToSelect);
     this.input.keyboard?.on('keydown-SPACE', this.maybeReturnToSelect);
     this.input.keyboard?.on('keydown-ESC', this.returnToSelect);
+    this.input.keyboard?.on('keydown-D', this.toggleDebugOverlay);
+    this.input.keyboard?.on('keydown-T', this.toggleTuningPanel);
 
     this.loop = new FixedStepLoop({
       step: () => this.sim.step(),
@@ -135,12 +143,20 @@ export class GameScene extends Phaser.Scene {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.removeVisibilityListener?.();
+      this.input.keyboard?.off('keydown-D', this.toggleDebugOverlay);
+      this.input.keyboard?.off('keydown-T', this.toggleTuningPanel);
+      this.tuningPanel?.destroy();
+      this.tuningPanel = null;
     });
   }
 
   override update(_time: number, delta: number): void {
     this.loop.advance(delta);
     this.render();
+    this.debugOverlay.update(
+      readDebugSnapshot(this.sim.getState(), this.game.loop.actualFps),
+      delta,
+    );
   }
 
   private readSnapshot(out: RenderSnapshot): void {
@@ -260,5 +276,28 @@ export class GameScene extends Phaser.Scene {
 
   private readonly returnToSelect = (): void => {
     this.scene.start('Select');
+  };
+
+  private readonly toggleDebugOverlay = (): void => {
+    this.debugOverlay.toggle();
+  };
+
+  /** Dynamically imports the dev-only tuning panel on first use (FR-038), DEV builds only. */
+  private readonly toggleTuningPanel = (): void => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+    if (this.tuningPanel) {
+      this.tuningPanel.destroy();
+      this.tuningPanel = null;
+      return;
+    }
+    void import('../dev/TuningPanel').then(({ TuningPanel }) => {
+      this.tuningPanel = new TuningPanel(this.runConfig, (config) => {
+        this.tuningPanel?.destroy();
+        this.tuningPanel = null;
+        this.scene.restart({ config });
+      });
+    });
   };
 }

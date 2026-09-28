@@ -13,6 +13,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "check:sim-purity": "tsx scripts/check-sim-purity.ts",
+    "check:prod-bundle": "tsx scripts/check-prod-bundle.ts",
     "gen:sin-lut": "tsx scripts/gen-sin-lut.ts",
     "golden:regen": "tsx scripts/gen-golden.ts",
     "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm check:sim-purity && pnpm test"

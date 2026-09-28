@@ -21,6 +21,7 @@ jobs:
       - run: pnpm gen:sin-lut && git diff --exit-code packages/sim/src/sinLut.ts
       - run: pnpm test
       - run: pnpm --filter @skyline/sim test:coverage
+      - run: pnpm --filter @skyline/web build && pnpm check:prod-bundle
 
   golden-browsers:
     needs: checks
