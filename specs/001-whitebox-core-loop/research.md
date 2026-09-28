@@ -205,7 +205,7 @@ and are covered by an e2e test.
 
 **Decision**:
 - `tuning.ts` exports `TUNING_VERSION`, `DEFAULT_TUNING: Readonly<TuningValues>`, and the
-  structural constants `TICK_RATE = 60`, `BLOCK_WIDTH = 1000`, `MAX_TICKS_PER_FRAME = 5`.
+  fixed engine constants (data-model §1.3).
 - `SimConfig.tuning: TuningValues` is required. `createSim` validates it: every value must be a
   safe integer within documented bounds, periods ≥ 1, `PERFECT_MAX ≤ GOOD_MAX`,
   `minRoofFloors ≤ targetFloors`. Invalid config throws `SimConfigError`.
@@ -214,15 +214,16 @@ and are covered by an e2e test.
 - The dev tuning panel edits a copy in memory and restarts the run with it. It never writes files.
   It is loaded with a dynamic `import()` behind `import.meta.env.DEV`, so production builds do not
   include it.
-- **Structural constants are fixed and not editable in the panel.** The 60 Hz tick is required by
-  Principle I. `BLOCK_WIDTH = 1000` is what makes |d| equal to ‰ (PRD §3.4).
-  `MAX_TICKS_PER_FRAME` is a render-loop limit that cannot change results.
+- **The fixed engine constants (data-model §1.3) are not editable in the panel.** The 60 Hz tick
+  is required by Principle I. `BLOCK_WIDTH = 1000` is what makes |d| equal to ‰ (PRD §3.4).
+  `MAX_TICKS_PER_FRAME` is a render-loop limit that cannot change results. `SIN_LUT_SIZE`,
+  `Q15_SCALE` and `SWAY_SMOOTHING_DIVISOR` are part of the PRD formulas themselves.
 
 **Rationale**: This implements Principle V exactly. Validation keeps panel experiments within
 integer-safe ranges (R3).
 
-**Deviation to raise**: FR-038 says the panel edits "every tuning value". This plan excludes the
-three structural constants. See the plan's Constitution Check notes.
+**Resolved (2026-09-27)**: FR-038 now says the panel edits every tuning value except the fixed
+engine constants (data-model §1.3).
 
 **Alternatives considered**: Passing only overrides as a diff (Principle V requires the complete
 values in exports; a complete object in config is simpler).
@@ -268,21 +269,30 @@ per frame. The PRD signature (`step(): SimEvent[]`) is kept; only the lifetime i
 - `pnpm golden:regen` must be run in the same change as any `TUNING_VERSION` bump. The golden
   test also asserts that each fixture's tuning deep-equals `DEFAULT_TUNING`.
 
+- The bot searches candidate drop ticks from a **test-only snapshot** of the sim
+  (`packages/sim/tests/helpers/snapshot.ts`), restoring it for each candidate. The snapshot uses
+  an internal `restoreSim(config, state, inputLog)` exported from `sim.ts` but **not** from
+  `index.ts`, so it is not part of the public API.
+
 **Rationale**: Scripted tiers make the fixtures cover combos, Goods, Misses and both roof kinds
-on purpose. Prefix replay needs no extra sim API (YAGNI).
+on purpose. Replaying the whole log for every candidate would cost about 10⁹ steps for a
+300-floor run; restoring a snapshot makes each candidate cost only the ticks up to its landing.
 
 ---
 
 ## R14. Cross-browser replay (Playwright)
 
-**Decision**: A test-only Vite page `apps/web/test-harness/golden.html` imports `@skyline/sim` and
-the fixtures (`import.meta.glob`), replays each fixture, and exposes the results on
-`window.__goldenResults`. Playwright's `webServer` starts the Vite dev server, and three projects
-(chromium, webkit, firefox) compare the results with the committed score and hash. The same
-Playwright setup runs the playability smoke tests (Space, pointer, Place Roof press). The harness
-page is not a Vite build input, so it never ships.
+**Decision**: A separate, private, test-only workspace package `packages/golden-harness`
+(Vite + Playwright, **no Phaser**). Its page imports `@skyline/sim` and the fixtures
+(`import.meta.glob`), replays each fixture, and exposes the results on `window.__goldenResults`.
+Playwright's `webServer` starts its Vite dev server, and three projects (chromium, webkit,
+firefox) compare the results with the committed score and hash. It is built in Phase 5, right
+after the Node golden test, and runs in CI from then on. `apps/web` has its own Playwright config
+for the playability smoke tests. The harness is never deployed.
 
-**Rationale**: This tests the real ESM sim module in each engine with no extra bundler setup.
+**Rationale**: This tests the real ESM sim module in each engine. Keeping it out of `apps/web`
+lets the constitution's cross-browser gate apply to every `packages/sim` change during the sim
+phases, before any Phaser work begins.
 
 **Alternatives considered**: Vitest browser mode with the Playwright provider (the user chose
 Playwright tests; one e2e runner is simpler).
@@ -312,10 +322,18 @@ seconds. Random gaps cover drops, roof requests during every phase, and runs tha
 production builds made with `VITE_PERF_TOOLS=1` so measurements use the optimized bundle, records frame
 times for 60 seconds into a preallocated `Float64Array` and reports the average fps, the maximum
 frame time, and the number of frames over 33 ms. The manual protocol in
-[quickstart.md](./quickstart.md#performance-check-sc-010) runs a scripted 60-floor Luxury run
-(auto-drop bot, same build flag) on the reference devices over USB remote debugging.
+[quickstart.md](./quickstart.md#performance-diagnostics-sc-010-optional) runs a scripted 60-floor Luxury run
+(auto-drop bot, same build flag), started with the URL parameter `?perf=luxury` so it works on a
+touch-only phone. The measurement targets are an iPhone 11 in Safari and desktop Chrome with 4×
+CPU throttling as a stand-in for a mid-range Android phone. A 120 Hz check is optional.
 
-**Rationale**: SC-010 needs measurements on real devices; the scripted bot makes runs repeatable.
+**Rationale**: SC-010 needs repeatable measurements on the available devices; the scripted bot
+and URL start make runs identical on each. CPU throttling approximates a slower CPU but not a
+mobile GPU, so a real Android check is still required before public release (PRD §12 Phase 5).
+
+**Amended 2026-09-28 (constitution v1.3.0)**: the capture and bot remain, but as optional
+diagnostics. There is no reference-device pass/fail gate; one real-phone playthrough is
+required before public release.
 
 **Size budget**: Phaser 4 minified and gzipped is expected to be well under 1 MB, far inside the
 5 MB MVP budget. The build reports compressed size.

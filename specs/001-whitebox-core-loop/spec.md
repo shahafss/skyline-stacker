@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-26
 
-**Status**: Draft
+**Status**: Ready for implementation
 
 **Input**: User description: "Phase 1 of Skyline Stacker: the deterministic whitebox core loop, as
 defined in docs/PRD.md. Scope is strictly PRD §12 "Phase 1", using the rules in §3 (core gameplay),
@@ -127,6 +127,9 @@ availability at and below the minimum, and confirm Quick Play has no roof and en
    ends only at 3 strikes with score = sum of floor population.
 5. **Given** very long Quick Play runs, **Then** crane speed never exceeds 2000‰, sway amplitude
    never exceeds 350 su, and play stays possible indefinitely.
+6. **Given** screenshots of the selector and of a tower of each type with its roof, **When** they
+   are viewed in grayscale, **Then** all four types can be told apart by block pattern, roof
+   shape, icon and name alone.
 
 ---
 
@@ -134,9 +137,9 @@ availability at and below the minimum, and confirm Quick Play has no roof and en
 
 A developer presses `D` to toggle a debug overlay showing current tick, last offset (‰), last
 tier, sway target and current amplitude, lean, crane speed ‰, sensitivity ‰, stabilizer ‰, combo,
-and fps. In development builds, a tuning panel lets them edit every tuning value except the three fixed
-engine constants, restart the run
-with the new values, and export the current values as JSON.
+and fps. In development builds, a tuning panel lets them edit every tuning value except the fixed
+engine constants (data-model §1.3), restart the run with the new values, and export the current
+values as JSON.
 
 **Why this priority**: Phase 2 tuning depends on these tools, but the game is playable without
 them.
@@ -160,7 +163,8 @@ the values.
 
 After a run, the developer downloads a JSON file with the run's config (including seed, assist,
 and the complete tuning values), input log, result, final score, and state hash, so the run can be
-replayed exactly, investigated, or (if it used default tuning) promoted to a golden fixture.
+replayed exactly, investigated, or, if it used default tuning, used to investigate or reproduce
+a fixture.
 
 **Why this priority**: Supports debugging and fixture creation, and Phase 2 criterion 7 (replaying
 disputed misses).
@@ -280,14 +284,16 @@ disputed misses).
   state. A state hash (32-bit FNV-1a over all state fields in a fixed, documented order) MUST be
   available for any state.
 - **FR-027**: The simulation MUST expose the event stream of PRD §8.3 (spawn, release, land, miss,
-  comboChanged, roofAvailable, finished, gameOver) so presentation can react without changing
-  state.
+  comboChanged, roofAvailable, roofPlaced, finished, gameOver) so presentation can react without
+  changing state. `roofPlaced` is emitted on the tick an early-roof input is applied.
 
 **Rendering and presentation (PRD §3.10, §4.1, §5.6, §7.3, §11)**
 
-- **FR-028**: The game MUST render whitebox visuals: colored rectangles in each type's color with
-  the per-type block visual height, the foundation, the crane and hook, and a text label for the
-  current tower type (so types are not told apart by color alone).
+- **FR-028**: The game MUST render whitebox visuals: blocks in each type's color with the
+  per-type block visual height, the foundation, and the crane and hook. Types MUST NOT be told
+  apart by color alone: each type MUST have a distinct block pattern, roof shape and icon, and
+  the current tower type MUST be shown as a text label. All four types MUST remain
+  distinguishable in grayscale.
 - **FR-029**: Rendering MUST run at the display refresh rate with a fixed-step accumulator capped
   at 5 ticks per frame, discarding excess time. Crane position, sway, falling block, and camera
   MUST be interpolated between the previous and current tick. Interpolated values MUST never feed
@@ -316,7 +322,8 @@ disputed misses).
   tier, sway target and current amplitude, lean, crane speed ‰, sensitivity ‰, stabilizer ‰,
   combo, and fps.
 - **FR-038**: Development builds MUST provide a tuning panel that edits every tuning value except
-  these three fixed engine constants (`TICK_RATE`, `BLOCK_WIDTH`, `MAX_TICKS_PER_FRAME`) in memory, restarts the run with the edited values, and exports the current values as JSON. It
+  the fixed engine constants (data-model §1.3) in memory, restarts the run with the edited
+  values, and exports the current values as JSON. It
   MUST NEVER write to the tuning source file. Production builds MUST NOT include it or any other
   way to override tuning.
 - **FR-039**: A run MUST carry an explicit `tuningOverridden` flag: true if any tuning value
@@ -381,7 +388,7 @@ disputed misses).
 - **Input Event**: `{ tick, type: 'drop' | 'roof' }`, the tick on which it was applied.
 - **Input Log**: ordered list of input events for one run.
 - **Simulation Event**: presentation notification (spawn, release, land, miss, comboChanged,
-  roofAvailable, finished, gameOver) with its data.
+  roofAvailable, roofPlaced, finished, gameOver) with its data.
 - **Tuning Set**: all global and per-type gameplay values plus a tuning version string. The
   tuning source holds the defaults; each run carries its own complete copy.
 - **Golden Fixture**: committed (config, input log) with expected score and hash, using only the
@@ -424,9 +431,12 @@ all of them pass.
   hashes.
 - **SC-009 (Input latency)**: An accepted drop is applied on the first simulation tick after the
   input event, verified with injected events.
-- **SC-010 (Performance)**: On the reference mid-range Android phone (Pixel 6a class), a 60-floor
-  Luxury run averages ≥ 58 fps with no frame above 33 ms over a 60-second capture. On a 120 Hz
-  display, the render rate averages ≥ 110 fps while the simulation stays at 60 ticks per second.
+- **SC-010 (Performance diagnostics)**: With the perf tools included (development builds, or
+  an optimized build made with `VITE_PERF_TOOLS=1`), `?perf=luxury` plays a 60-floor Luxury run
+  with the auto-drop bot and shows a 60-second report of average fps, maximum frame time and
+  frames over 33 ms. Device measurements are optional diagnostics, not a pass/fail gate
+  (constitution Principle VI, v1.3.0). Frame-rate independence is guaranteed by the automated
+  SC-008 test.
 - **SC-011 (Playability)**: A full Residential run (30 floors plus roof), a game-over run, and a
   Quick Play run can each be played start to finish with mouse, touch, and Spacebar. The miss
   slide-off and game-over collapse both play visibly.
@@ -454,8 +464,9 @@ all of them pass.
 - **Sway before the first floor**: amplitude and displacement are 0 while N = 0.
 - **Rotate-device overlay** (PRD §10.3) is deferred to Phase 3. Phase 1 renders portrait and
   letterboxes in any orientation.
-- **Reference devices**: the team has access to a Pixel 6a–class Android phone and a 120 Hz
-  display to measure SC-010.
+- **Performance measurement**: there is no reference-device gate (constitution Principle VI,
+  v1.3.0). A single real-phone playthrough is required before public release (PRD §12
+  Phase 5), not in Phase 1.
 - **Tuning overrides**: follow constitution Principle V (v1.1.0). Overrides live in memory in
   development builds only, are flagged with `tuningOverridden`, stay replayable through the
   embedded tuning values, and never become golden fixtures or saved towers.

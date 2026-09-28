@@ -1,0 +1,217 @@
+{
+  "format": "skyline-stacker/run",
+  "exportVersion": 1,
+  "simVersion": "0.1.0",
+  "tuningVersion": "1.0.0",
+  "tuningOverridden": false,
+  "config": {
+    "type": "residential",
+    "mode": "city",
+    "seed": 1001,
+    "assist": false,
+    "tuning": {
+      "global": {
+        "CRANE_AMPLITUDE": 1100,
+        "DROP_FALL_TICKS": 24,
+        "SPAWN_DELAY_TICKS": 36,
+        "PERFECT_MAX": 50,
+        "GOOD_MAX": 250,
+        "LIVES": 3,
+        "CRANE_SPEED_PER_FLOOR": 20,
+        "CRANE_SPEED_CAP": 2000,
+        "SENSITIVITY_STEP": 50,
+        "SENSITIVITY_CAP": 2000,
+        "BASE_SWAY_PER_FLOOR": 3,
+        "LEAN_GAIN": 600,
+        "SWAY_AMP_CAP": 350,
+        "STABILIZER_STEP": 800,
+        "STABILIZER_FLOOR": 500,
+        "COMBO_STEP": 250,
+        "COMBO_CAP": 3000,
+        "COMPLETION_BONUS": 200,
+        "BONUS_CAP": 1000,
+        "ASSIST_SWAY": 500,
+        "CAMERA_HOOK_CLEARANCE": 5,
+        "VISUAL_TILT_MAX_DEG": 6
+      },
+      "types": {
+        "residential": {
+          "targetFloors": 30,
+          "minRoofFloors": 15,
+          "cranePeriodTicks": 144,
+          "swayPeriodTicks": 180,
+          "swayMult": 1000,
+          "perfectPop": 10,
+          "goodPop": 5,
+          "blockVisualHeight": 1000
+        },
+        "commercial": {
+          "targetFloors": 40,
+          "minRoofFloors": 20,
+          "cranePeriodTicks": 144,
+          "swayPeriodTicks": 120,
+          "swayMult": 1000,
+          "perfectPop": 15,
+          "goodPop": 7,
+          "blockVisualHeight": 1000
+        },
+        "office": {
+          "targetFloors": 50,
+          "minRoofFloors": 25,
+          "cranePeriodTicks": 120,
+          "swayPeriodTicks": 180,
+          "swayMult": 1200,
+          "perfectPop": 20,
+          "goodPop": 10,
+          "blockVisualHeight": 1400
+        },
+        "luxury": {
+          "targetFloors": 60,
+          "minRoofFloors": 30,
+          "cranePeriodTicks": 132,
+          "swayPeriodTicks": 156,
+          "swayMult": 2000,
+          "perfectPop": 30,
+          "goodPop": 15,
+          "blockVisualHeight": 1200
+        }
+      }
+    }
+  },
+  "inputLog": [
+    {
+      "tick": 28,
+      "type": "drop"
+    },
+    {
+      "tick": 104,
+      "type": "drop"
+    },
+    {
+      "tick": 171,
+      "type": "drop"
+    },
+    {
+      "tick": 269,
+      "type": "drop"
+    },
+    {
+      "tick": 377,
+      "type": "drop"
+    },
+    {
+      "tick": 445,
+      "type": "drop"
+    },
+    {
+      "tick": 536,
+      "type": "drop"
+    },
+    {
+      "tick": 601,
+      "type": "drop"
+    },
+    {
+      "tick": 662,
+      "type": "drop"
+    },
+    {
+      "tick": 736,
+      "type": "drop"
+    },
+    {
+      "tick": 822,
+      "type": "drop"
+    },
+    {
+      "tick": 886,
+      "type": "drop"
+    },
+    {
+      "tick": 972,
+      "type": "drop"
+    },
+    {
+      "tick": 1076,
+      "type": "drop"
+    },
+    {
+      "tick": 1155,
+      "type": "drop"
+    },
+    {
+      "tick": 1241,
+      "type": "drop"
+    },
+    {
+      "tick": 1327,
+      "type": "drop"
+    },
+    {
+      "tick": 1395,
+      "type": "drop"
+    },
+    {
+      "tick": 1500,
+      "type": "drop"
+    },
+    {
+      "tick": 1576,
+      "type": "drop"
+    },
+    {
+      "tick": 1640,
+      "type": "drop"
+    },
+    {
+      "tick": 1701,
+      "type": "drop"
+    },
+    {
+      "tick": 1769,
+      "type": "drop"
+    },
+    {
+      "tick": 1870,
+      "type": "drop"
+    },
+    {
+      "tick": 1933,
+      "type": "drop"
+    },
+    {
+      "tick": 2002,
+      "type": "drop"
+    },
+    {
+      "tick": 2086,
+      "type": "drop"
+    },
+    {
+      "tick": 2158,
+      "type": "drop"
+    },
+    {
+      "tick": 2261,
+      "type": "drop"
+    },
+    {
+      "tick": 2363,
+      "type": "drop"
+    },
+    {
+      "tick": 2424,
+      "type": "drop"
+    },
+    {
+      "tick": 2499,
+      "type": "drop"
+    }
+  ],
+  "result": {
+    "result": "completed",
+    "score": 727,
+    "floors": 30
+  },
+  "hash": 3603062121
+}

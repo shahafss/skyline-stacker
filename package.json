@@ -1,0 +1,34 @@
+{
+  "name": "skyline-stacker",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.6.0+sha512.3ef68f951cb111ac204b4a5a16f0b2ddf0da56a96e0413e81d855d9f0b55ef926714709028e1cd00c405c2c5fb7b9e8ec4dc46777c805d0373c2f2ff00fd20ec",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p scripts/tsconfig.json && pnpm -r --if-present run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "check:sim-purity": "tsx scripts/check-sim-purity.ts",
+    "check:prod-bundle": "tsx scripts/check-prod-bundle.ts",
+    "check:bundle-size": "tsx scripts/check-bundle-size.ts",
+    "gen:sin-lut": "tsx scripts/gen-sin-lut.ts",
+    "golden:regen": "tsx scripts/gen-golden.ts",
+    "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm check:sim-purity && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.15.0",
+    "@vitest/coverage-v8": "^5.0.2",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.9",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.2"
+  }
+}

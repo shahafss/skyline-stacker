@@ -1,0 +1,181 @@
+{
+  "format": "skyline-stacker/run",
+  "exportVersion": 1,
+  "simVersion": "0.1.0",
+  "tuningVersion": "1.0.0",
+  "tuningOverridden": false,
+  "config": {
+    "type": "commercial",
+    "mode": "city",
+    "seed": 1002,
+    "assist": false,
+    "tuning": {
+      "global": {
+        "CRANE_AMPLITUDE": 1100,
+        "DROP_FALL_TICKS": 24,
+        "SPAWN_DELAY_TICKS": 36,
+        "PERFECT_MAX": 50,
+        "GOOD_MAX": 250,
+        "LIVES": 3,
+        "CRANE_SPEED_PER_FLOOR": 20,
+        "CRANE_SPEED_CAP": 2000,
+        "SENSITIVITY_STEP": 50,
+        "SENSITIVITY_CAP": 2000,
+        "BASE_SWAY_PER_FLOOR": 3,
+        "LEAN_GAIN": 600,
+        "SWAY_AMP_CAP": 350,
+        "STABILIZER_STEP": 800,
+        "STABILIZER_FLOOR": 500,
+        "COMBO_STEP": 250,
+        "COMBO_CAP": 3000,
+        "COMPLETION_BONUS": 200,
+        "BONUS_CAP": 1000,
+        "ASSIST_SWAY": 500,
+        "CAMERA_HOOK_CLEARANCE": 5,
+        "VISUAL_TILT_MAX_DEG": 6
+      },
+      "types": {
+        "residential": {
+          "targetFloors": 30,
+          "minRoofFloors": 15,
+          "cranePeriodTicks": 144,
+          "swayPeriodTicks": 180,
+          "swayMult": 1000,
+          "perfectPop": 10,
+          "goodPop": 5,
+          "blockVisualHeight": 1000
+        },
+        "commercial": {
+          "targetFloors": 40,
+          "minRoofFloors": 20,
+          "cranePeriodTicks": 144,
+          "swayPeriodTicks": 120,
+          "swayMult": 1000,
+          "perfectPop": 15,
+          "goodPop": 7,
+          "blockVisualHeight": 1000
+        },
+        "office": {
+          "targetFloors": 50,
+          "minRoofFloors": 25,
+          "cranePeriodTicks": 120,
+          "swayPeriodTicks": 180,
+          "swayMult": 1200,
+          "perfectPop": 20,
+          "goodPop": 10,
+          "blockVisualHeight": 1400
+        },
+        "luxury": {
+          "targetFloors": 60,
+          "minRoofFloors": 30,
+          "cranePeriodTicks": 132,
+          "swayPeriodTicks": 156,
+          "swayMult": 2000,
+          "perfectPop": 30,
+          "goodPop": 15,
+          "blockVisualHeight": 1200
+        }
+      }
+    }
+  },
+  "inputLog": [
+    {
+      "tick": 66,
+      "type": "drop"
+    },
+    {
+      "tick": 183,
+      "type": "drop"
+    },
+    {
+      "tick": 262,
+      "type": "drop"
+    },
+    {
+      "tick": 354,
+      "type": "drop"
+    },
+    {
+      "tick": 439,
+      "type": "drop"
+    },
+    {
+      "tick": 503,
+      "type": "drop"
+    },
+    {
+      "tick": 620,
+      "type": "drop"
+    },
+    {
+      "tick": 715,
+      "type": "drop"
+    },
+    {
+      "tick": 806,
+      "type": "drop"
+    },
+    {
+      "tick": 907,
+      "type": "drop"
+    },
+    {
+      "tick": 991,
+      "type": "drop"
+    },
+    {
+      "tick": 1060,
+      "type": "drop"
+    },
+    {
+      "tick": 1160,
+      "type": "drop"
+    },
+    {
+      "tick": 1260,
+      "type": "drop"
+    },
+    {
+      "tick": 1351,
+      "type": "drop"
+    },
+    {
+      "tick": 1419,
+      "type": "drop"
+    },
+    {
+      "tick": 1509,
+      "type": "drop"
+    },
+    {
+      "tick": 1614,
+      "type": "drop"
+    },
+    {
+      "tick": 1715,
+      "type": "drop"
+    },
+    {
+      "tick": 1815,
+      "type": "drop"
+    },
+    {
+      "tick": 1876,
+      "type": "roof"
+    },
+    {
+      "tick": 1877,
+      "type": "drop"
+    },
+    {
+      "tick": 1959,
+      "type": "drop"
+    }
+  ],
+  "result": {
+    "result": "built",
+    "score": 792,
+    "floors": 20
+  },
+  "hash": 403861219
+}

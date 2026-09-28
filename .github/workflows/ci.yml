@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm check:sim-purity
+      - run: pnpm gen:sin-lut && git diff --exit-code packages/sim/src/sinLut.ts
+      - run: pnpm test
+      - run: pnpm --filter @skyline/sim test:coverage
+      - run: pnpm --filter @skyline/web build && pnpm check:prod-bundle && pnpm check:bundle-size
+      - run: VITE_PERF_TOOLS=1 pnpm --filter @skyline/web build
+
+  golden-browsers:
+    needs: checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @skyline/golden-harness exec playwright install --with-deps chromium webkit firefox
+      - run: pnpm --filter @skyline/golden-harness test:e2e

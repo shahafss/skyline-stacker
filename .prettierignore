@@ -1,0 +1,11 @@
+packages/sim/src/sinLut.ts
+pnpm-lock.yaml
+coverage
+dist
+node_modules
+
+# Non-source project content out of scope for this workspace's formatting.
+.claude/
+.specify/
+docs/
+specs/

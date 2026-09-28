@@ -326,7 +326,11 @@ The simulation lives in a standalone package (`packages/sim`, §8.2) and must ob
 
 ## 7. Tuning Parameters
 
-All values live in a single file, `packages/sim/src/tuning.ts`, exported as constants with a `TUNING_VERSION` string. Any change to a value bumps `TUNING_VERSION` and requires regenerating the golden logs (§10.1).
+All gameplay values have their **defaults** in a single file, `packages/sim/src/tuning.ts`, exported as `DEFAULT_TUNING` with a `TUNING_VERSION` string. The simulation receives a complete copy of the values in `SimConfig.tuning` (§8.3). Any change to a default value bumps `TUNING_VERSION` and requires regenerating the golden logs (§10.1).
+
+- `tuning.ts` also exports the **fixed engine constants**. These are `TICK_RATE`, `BLOCK_WIDTH`, `MAX_TICKS_PER_FRAME`, `SIN_LUT_SIZE`, `Q15_SCALE` and `SWAY_SMOOTHING_DIVISOR`; see data-model §1.3 in `specs/001-whitebox-core-loop/data-model.md`. They are not tuning values and cannot be overridden.
+- Type **colors** (§7.2) are presentation styling. They live in the web app's render configuration, not in `tuning.ts`.
+- Block visual height is stored in `tuning.ts` as `blockVisualHeight` in ‰ (1000 = 1.0×).
 
 ### 7.1 Global parameters
 
@@ -369,8 +373,8 @@ All values live in a single file, `packages/sim/src/tuning.ts`, exported as cons
 | `swayMult‰` | 1000 | 1000 | 1200 | 2000 |
 | `perfectPop` (per floor, before combo) | 10 | 15 | 20 | 30 |
 | `goodPop` (per floor) | 5 | 7 | 10 | 15 |
-| Block visual height (× standard) | 1.0 | 1.0 | 1.4 | 1.2 |
-| Color | Blue | Red | Green | Yellow |
+| Block visual height (× standard; stored as ‰: 1000 / 1000 / 1400 / 1200) | 1.0 | 1.0 | 1.4 | 1.2 |
+| Color (render styling, not in `tuning.ts`) | Blue | Red | Green | Yellow |
 
 Quick Play uses the Residential column with no target floors and no roof.
 
@@ -404,6 +408,8 @@ Matter.js (bundled with Phaser 4) is used **only** for visual effects. Its resul
 ```
 /packages/sim        Pure deterministic simulation (shared by client and server)
 /apps/web            Vite + Phaser 4 (+ Vue 3 / Pinia from Phase 3)
+/packages/golden-harness  Test-only Vite + Playwright page that replays the golden fixtures in
+                          Chromium, WebKit and Firefox (no Phaser; never shipped; from Phase 1)
 /apps/api            NestJS backend (v1.1)
 /scripts             Build scripts (e.g. gen-sin-lut.ts)
 ```
@@ -439,6 +445,7 @@ type SimEvent =
   | { kind: 'miss'; tick: number; offset: number; strikes: number }
   | { kind: 'comboChanged'; combo: number; multiplier: number }
   | { kind: 'roofAvailable' }
+  | { kind: 'roofPlaced'; tick: number }     // early roof applied this tick
   | { kind: 'finished'; result: 'completed' | 'built'; score: number; floors: number }
   | { kind: 'gameOver'; score: number; floors: number };
 
@@ -468,6 +475,8 @@ const DEFAULT_TUNING: Readonly<TuningValues>;
 const TICK_RATE: 60;                 // fixed engine constant
 const BLOCK_WIDTH: 1000;             // fixed engine constant
 const MAX_TICKS_PER_FRAME: number;   // fixed engine constant
+const Q15_SCALE: 32768;              // fixed engine constant (sine table scale)
+const SWAY_SMOOTHING_DIVISOR: 16;    // fixed engine constant (§4.3 smoothing)
 function isDefaultTuning(t: TuningValues): boolean;
 function cloneTuning(t: TuningValues): TuningValues;
 
@@ -477,7 +486,7 @@ class ReplayError extends Error { readonly tick: number }
 ```
 
 - `requestDrop` and `requestRoof` queue the input. It is applied, and logged with the tick number, during the next `step()`.
-- **Tuning:** `SimConfig.tuning` always holds the complete tuning values. `TICK_RATE`, `BLOCK_WIDTH` and `MAX_TICKS_PER_FRAME` are fixed engine constants and cannot be overridden.
+- **Tuning:** `SimConfig.tuning` always holds the complete tuning values. The fixed engine constants (data-model §1.3 in `specs/001-whitebox-core-loop/data-model.md`: `TICK_RATE`, `BLOCK_WIDTH`, `MAX_TICKS_PER_FRAME`, `SIN_LUT_SIZE`, `Q15_SCALE`, `SWAY_SMOOTHING_DIVISOR`) are not part of `TuningValues` and cannot be overridden.
 - **Run result:** Every run ends with exactly one result, which is part of the final state. Replaying a run reproduces it. After a result is set, `step()` returns no events and the state no longer changes.
 - **Replay:** `replay` runs until a result is set, or until `DROP_FALL_TICKS + 1` ticks after the last input. It throws `ReplayError` if the log is not strictly increasing, or if an input would be rejected on its tick.
 - **Roof landing:** A roof landing reports `roof: true`, `floor = N` and `pop = 0`.
@@ -528,6 +537,7 @@ interface SaveV1 {
 }
 ```
 
+- **Tuning:** saved city towers always use the default tuning (`DEFAULT_TUNING`) of the `TUNING_VERSION` recorded in the save. So a tile stores `seed`, `inputLog` and `assist`, but no tuning values. A run played with overridden tuning (development builds only) is never saved as a city tower (constitution Principle V).
 - A migration function `migrate(raw): SaveVLatest` must exist, even if it only handles v1 at first.
 - A corrupted or unparseable save is backed up to `skylineStacker.save.corrupt` and replaced with a fresh save. The player is notified.
 
@@ -553,6 +563,9 @@ interface SaveV1 {
    - Match → accepted.
 5. **Plausibility flags:** A run is flagged (hidden from leaderboards pending review, not rejected) if Perfect rate > 95% over ≥ 40 floors, or if more than 20 consecutive Perfects occur at crane speed ≥ 1800‰. Replay validation proves a run is *possible*, not that a human played it. These flags are a lightweight mitigation.
 6. Runs with `assist: true` are stored but excluded from leaderboards.
+7. **Tuning:** ranked runs always use the default tuning (`DEFAULT_TUNING`) of the current `TUNING_VERSION`.
+   - The server replays with its own copy of that tuning and ignores any tuning values the client sends.
+   - A run the client played with different tuning therefore fails the score/hash check and is rejected.
 
 ### 9.3 Leaderboards
 
@@ -571,11 +584,9 @@ interface SaveV1 {
 
 ### 10.2 Performance
 
-- **Reference devices:**
-  - Mid-range Android (Pixel 6a / Galaxy A54 class) in Chrome.
-  - iPhone 12 in Safari.
-  - Any desktop from the last 5 years.
-- **Frame rate:** 60 fps sustained during play. On 120 Hz displays, rendering runs at the display rate while the simulation remains at 60 ticks per second.
+- **Frame rate:** the game should run smoothly at 60 fps on current phones and desktops. Rendering runs at the display rate while the simulation remains at 60 ticks per second. Frame-rate independence is guaranteed by an automated test.
+- **No per-phase device measurement:** there is no reference-device pass/fail gate. The dev perf tools (frame-time capture and auto-drop bot) are diagnostics, used when stutter is noticed or reported.
+- **Real-device check:** before public release (§12 Phase 5), the game is played through once on a real phone (any current mid-range iOS or Android device) with no noticeable stutter.
 - **Initial download:** ≤ 5 MB compressed for MVP.
 - **Time to interactive:** < 4 s on a fast 4G connection.
 - **Supported browsers:** Last 2 versions of Chrome, Edge, Firefox; Safari / iOS Safari 16+.
@@ -613,7 +624,7 @@ interface SaveV1 {
 - **2.5D look:** Pre-rendered or vector art with 3D shading and perspective, on a strictly 2D simulation plane.
 - **Programmatic animation (Phaser tweens):** Crane motion (from the simulation), clouds, parallax, screen shake, UI transitions.
 - **Texture atlases:** Tower block sprites (per type: floor, roof, foundation), citizen reactions on balconies (cheer on Perfect, gasp on Miss), and particle sprites.
-- **Whitebox (Phases 1–2):** Colored rectangles in the type colors, plus a debug overlay (§12, Phase 1).
+- **Whitebox (Phases 1–2):** Simple generated blocks in the type colors, plus a debug overlay (§12, Phase 1). Even in whitebox, each type has a distinct block pattern, roof shape and icon, shown with its text label, so the types can be told apart in grayscale (§10.4). Examples: Residential has stripes and a pitched roof; Commercial an awning band and a sign; Office a window grid and a stepped roof; Luxury a diamond pattern and a spire. All user-facing text comes from one strings file.
 
 ---
 
@@ -628,7 +639,7 @@ Each phase is specified and built separately. A phase is complete only when all 
 - Build `packages/sim`: LUT generation script and committed table, PRNG, crane, drop and landing, tiers, scoring, combo, sway shear model, lean, stabilizer, strikes, roof (automatic and early), Quick Play, input log, `replay`, `hashState`, and `tuning.ts`.
 - Build `apps/web` with Vite + Phaser 4 only (no Vue): whitebox rendering, render interpolation, camera follow and culling, input handling, and visual-only Matter miss and collapse.
 - **Debug overlay** (toggle with the `D` key): current tick, last offset (‰), last tier, sway target and current amplitude, lean, crane speed ‰, sensitivity ‰, stabilizer ‰, combo, fps.
-- **Dev tuning panel** (development builds only): live-edit every `tuning.ts` value except the fixed engine constants (`TICK_RATE`, `BLOCK_WIDTH`, `MAX_TICKS_PER_FRAME`) and restart the run, with export of the current values as JSON. Edits stay in memory and never change `tuning.ts`.
+- **Dev tuning panel** (development builds only): live-edit every `tuning.ts` value except the fixed engine constants (data-model §1.3 in `specs/001-whitebox-core-loop/data-model.md`) and restart the run, with export of the current values as JSON. Edits stay in memory and never change `tuning.ts`.
 - **Dev type selector:** play any of the 4 tower types, or Quick Play.
 - **Run export:** download the last run's `(config, inputLog, score, hash)` as JSON.
 
@@ -661,7 +672,7 @@ Each phase is specified and built separately. A phase is complete only when all 
    - Replaying the same log 1,000 times in one process yields the same hash every time.
 8. **Frame-rate independence:** A headless test drives the render loop at simulated 30, 60, 120 and 144 Hz with the same scripted input ticks. It produces identical input logs and identical final hashes.
 9. **Input latency:** An accepted drop is applied on the first simulation tick after the input event, verified by a test with injected events.
-10. **Performance:** On the reference mid-range Android device, a 60-floor Luxury run averages ≥ 58 fps with no frame above 33 ms over a 60-second capture. On a 120 Hz device, the render rate is ≥ 110 fps average while the simulation stays at 60 ticks per second.
+10. **Performance diagnostics:** With the perf tools included (development builds, or an optimized build made with `VITE_PERF_TOOLS=1`), `?perf=luxury` plays a Luxury run with the auto-drop bot and shows a 60-second frame-time report (average fps, maximum frame time, frames over 33 ms). No device measurement is required to complete the phase (§10.2).
 11. **Playability:** A full Residential run (30 floors plus roof), a game-over run, and a Quick Play run can each be played start to finish with mouse, touch and Spacebar. The miss slide-off and the game-over collapse both play.
 
 ### Phase 2 — Playtest and Tuning Gate
@@ -692,12 +703,13 @@ Each phase is specified and built separately. A phase is complete only when all 
 
 **Scope:** Vue 3 + Pinia app shell; `GameCanvas.vue`; the event bus; HUD; title screen ("Tap to Start"); pause menu; settings (audio, Reduced Motion, Steady Tower); Quick Play flow with local best; the local save module with migration and corruption handling.
 
+**Replacements:** the Phase 1 canvas HUD, the type selector and the dev-only plain-DOM tuning panel are replaced with Vue components (constitution Principle III). The tuning panel stays excluded from production builds.
+
 **Acceptance criteria:**
 - No Phaser object is reachable from any Pinia store (verified by a unit test that inspects the store state for non-plain values).
 - The HUD reflects every simulation event within one rendered frame.
 - Quick Play is fully playable from the title screen, and the local best persists across reloads.
 - A corrupted save is recovered as specified in §8.6.
-- All Phase 1 performance criteria still pass with the Vue shell mounted.
 
 ### Phase 4 — City Mode (MVP complete)
 
@@ -716,8 +728,8 @@ Each phase is specified and built separately. A phase is complete only when all 
 - The colorblind check passes: all 4 types can be identified in grayscale screenshots.
 - Reduced Motion disables every effect listed in §10.4.
 - The initial download is ≤ 5 MB compressed.
-- All Phase 1 performance criteria still pass with final art.
 - The debug overlay (`D`) is disabled or hidden in public production builds before release. Run export may stay available.
+- Before public release, the game is played through once on a real phone (any current mid-range iOS or Android device) with no noticeable stutter (§10.2).
 
 ### Phase 6 — Backend and Leaderboards (v1.1)
 

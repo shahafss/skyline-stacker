@@ -1,0 +1,201 @@
+{
+  "format": "skyline-stacker/run",
+  "exportVersion": 1,
+  "simVersion": "0.1.0",
+  "tuningVersion": "1.0.0",
+  "tuningOverridden": false,
+  "config": {
+    "type": "residential",
+    "mode": "quick",
+    "seed": 1004,
+    "assist": true,
+    "tuning": {
+      "global": {
+        "CRANE_AMPLITUDE": 1100,
+        "DROP_FALL_TICKS": 24,
+        "SPAWN_DELAY_TICKS": 36,
+        "PERFECT_MAX": 50,
+        "GOOD_MAX": 250,
+        "LIVES": 3,
+        "CRANE_SPEED_PER_FLOOR": 20,
+        "CRANE_SPEED_CAP": 2000,
+        "SENSITIVITY_STEP": 50,
+        "SENSITIVITY_CAP": 2000,
+        "BASE_SWAY_PER_FLOOR": 3,
+        "LEAN_GAIN": 600,
+        "SWAY_AMP_CAP": 350,
+        "STABILIZER_STEP": 800,
+        "STABILIZER_FLOOR": 500,
+        "COMBO_STEP": 250,
+        "COMBO_CAP": 3000,
+        "COMPLETION_BONUS": 200,
+        "BONUS_CAP": 1000,
+        "ASSIST_SWAY": 500,
+        "CAMERA_HOOK_CLEARANCE": 5,
+        "VISUAL_TILT_MAX_DEG": 6
+      },
+      "types": {
+        "residential": {
+          "targetFloors": 30,
+          "minRoofFloors": 15,
+          "cranePeriodTicks": 144,
+          "swayPeriodTicks": 180,
+          "swayMult": 1000,
+          "perfectPop": 10,
+          "goodPop": 5,
+          "blockVisualHeight": 1000
+        },
+        "commercial": {
+          "targetFloors": 40,
+          "minRoofFloors": 20,
+          "cranePeriodTicks": 144,
+          "swayPeriodTicks": 120,
+          "swayMult": 1000,
+          "perfectPop": 15,
+          "goodPop": 7,
+          "blockVisualHeight": 1000
+        },
+        "office": {
+          "targetFloors": 50,
+          "minRoofFloors": 25,
+          "cranePeriodTicks": 120,
+          "swayPeriodTicks": 180,
+          "swayMult": 1200,
+          "perfectPop": 20,
+          "goodPop": 10,
+          "blockVisualHeight": 1400
+        },
+        "luxury": {
+          "targetFloors": 60,
+          "minRoofFloors": 30,
+          "cranePeriodTicks": 132,
+          "swayPeriodTicks": 156,
+          "swayMult": 2000,
+          "perfectPop": 30,
+          "goodPop": 15,
+          "blockVisualHeight": 1200
+        }
+      }
+    }
+  },
+  "inputLog": [
+    {
+      "tick": 7,
+      "type": "drop"
+    },
+    {
+      "tick": 105,
+      "type": "drop"
+    },
+    {
+      "tick": 216,
+      "type": "drop"
+    },
+    {
+      "tick": 284,
+      "type": "drop"
+    },
+    {
+      "tick": 384,
+      "type": "drop"
+    },
+    {
+      "tick": 492,
+      "type": "drop"
+    },
+    {
+      "tick": 580,
+      "type": "drop"
+    },
+    {
+      "tick": 677,
+      "type": "drop"
+    },
+    {
+      "tick": 738,
+      "type": "drop"
+    },
+    {
+      "tick": 857,
+      "type": "drop"
+    },
+    {
+      "tick": 963,
+      "type": "drop"
+    },
+    {
+      "tick": 1075,
+      "type": "drop"
+    },
+    {
+      "tick": 1191,
+      "type": "drop"
+    },
+    {
+      "tick": 1308,
+      "type": "drop"
+    },
+    {
+      "tick": 1403,
+      "type": "drop"
+    },
+    {
+      "tick": 1504,
+      "type": "drop"
+    },
+    {
+      "tick": 1595,
+      "type": "drop"
+    },
+    {
+      "tick": 1680,
+      "type": "drop"
+    },
+    {
+      "tick": 1789,
+      "type": "drop"
+    },
+    {
+      "tick": 1861,
+      "type": "drop"
+    },
+    {
+      "tick": 1939,
+      "type": "drop"
+    },
+    {
+      "tick": 2022,
+      "type": "drop"
+    },
+    {
+      "tick": 2100,
+      "type": "drop"
+    },
+    {
+      "tick": 2170,
+      "type": "drop"
+    },
+    {
+      "tick": 2273,
+      "type": "drop"
+    },
+    {
+      "tick": 2339,
+      "type": "drop"
+    },
+    {
+      "tick": 2400,
+      "type": "drop"
+    },
+    {
+      "tick": 2461,
+      "type": "drop"
+    }
+  ],
+  "result": {
+    "result": "gameOver",
+    "score": 678,
+    "floors": 25
+  },
+  "hash": 221166759
+}

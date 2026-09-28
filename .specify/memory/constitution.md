@@ -1,42 +1,51 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.0.0 → 1.1.0
-Bump rationale: MINOR. Principle V is materially expanded (tuning passed through config,
-in-memory-only dev overrides, full tuning values in every export, golden fixtures limited to
-defaults). No principle was removed, and nothing that was compliant under 1.0.0 is now
-forbidden in a way that changes the principle's meaning, so this is not MAJOR.
+Retention: by project decision (2026-09-27), this report is kept in the committed file as the
+required change record for each amendment. Future amendments replace it with a new report
+rather than deleting it.
+
+Version change: 1.2.0 → 1.3.0
+Bump rationale: MINOR. Principle VI keeps its title and purpose, but its guidance is materially
+changed: mandatory measurement gates are removed or downgraded to SHOULD. Everything that
+complied with 1.2.0 still complies with 1.3.0, so no existing work becomes non-compliant; this
+is why it is not treated as MAJOR (a backward-incompatible redefinition).
 
 Modified principles:
-  - V. Single Source of Tuning (title unchanged; rules rewritten and expanded)
-Added sections:
-  - Change log (under the version line in Governance)
+  - VI. Performance Budgets (title unchanged):
+    - Removed: per-phase measurement on an iPhone 11 (Safari) and desktop Chrome at 4× CPU
+      throttling; the 120 Hz hardware check; re-verification whenever a phase adds a layer;
+      the pre-release Pixel 6a–class Android measurement.
+    - Downgraded MUST → SHOULD: sustained 60 fps (no numeric pass/fail capture); no per-frame
+      allocation in the render loop.
+    - Kept as MUST: render at display rate with a fixed 60 ticks/s sim, catch-up capped at
+      MAX_TICKS_PER_FRAME, the automated 30/60/120/144 Hz frame-rate-independence test, and
+      the ≤ 5 MB initial download (now stated as checked in CI).
+    - Added: one real-phone playthrough (any current mid-range iOS or Android device) with no
+      noticeable stutter before public release (PRD Phase 5).
+Modified sections:
+  - Development Workflow and Quality Gates: the CI list includes the download-size check; the
+    per-phase performance measurement gate is replaced by the pre-release playthrough.
+  - Governance: change log entry for 1.3.0.
+Added sections: none
 Removed sections: none
 
 Templates and commands: not modified (out of scope for this command).
 
-Resolved PRD ↔ constitution point (from the 1.0.0 report):
-  - #1 (dev tuning panel vs. single source of tuning) is now settled by the amended
-    Principle V.
-
-Still-open PRD ↔ constitution points (Governance rule 2):
-  - PRD §8.3 `SimConfig` is { type, mode, seed, assist } and has no tuning field. Principle V
-    now requires tuning in the sim config. The PRD needs a matching update (or the plan must
-    record the deviation).
-  - PRD §8.6 `SaveV1` tiles and PRD §9.2 run submission carry only `tuningVersion`. That is
-    fine for default-tuning runs; confirm that saved and ranked runs always use defaults.
-  - 1.0.0 points #2–#4 (dev-only telemetry, no apps/api before Phase 6, mitt and Matter.js
-    pre-justified) remain as written. Confirm.
+PRD ↔ constitution status (Governance rule 2):
+  - Resolved 2026-09-28 (recorded without a version change): PRD §10.2 now has no
+    reference-device gate and requires one real-phone playthrough before release; §12 Phase 1
+    criterion 10 is now "performance diagnostics" (perf tools exist, no device measurement);
+    §12 Phase 3 and Phase 5 no longer re-check Phase 1 performance criteria, and Phase 5's
+    Android measurement is replaced by the real-phone playthrough.
+  - No PRD ↔ constitution points remain open.
 
 Compliance check of existing specs:
-  - specs/001-whitebox-core-loop/spec.md is NOT fully compliant:
-    - FR-041 and the "Run Export" entity list only the tuning version. They MUST include the
-      complete tuning values.
-    - FR-039's example ("a tuning version that does not match") is now insufficient on its
-      own; overridden runs are replayable via the embedded values.
-    - The "Run Config" entity has no tuning values; it MUST include them.
-    - FR-038 SHOULD state that the panel overrides in memory only and never writes files.
-    - The "Tuning overrides" assumption refers to the old reading of Principle V.
+  - specs/001-whitebox-core-loop: compliant. Updated 2026-09-28: spec.md SC-010 (now
+    "performance diagnostics") and its performance assumption, plan.md Performance Goals and
+    Constitution Check row VI, research.md R16 (amendment note), quickstart.md (the
+    performance section is optional), and tasks.md T094 (closed as an optional diagnostic on
+    the recorded iPhone 11 Safari capture).
 
 Follow-up TODOs: none.
 -->
@@ -101,9 +110,14 @@ sees that is not derived from the sim is decoration, and it must not change resu
 
 ### III. Strict UI / Engine Separation
 
-- Vue 3 (Composition API) MUST own all DOM UI: menus, HUD, city grid, dialogs, settings.
-- Phaser MUST own only the game canvas. Phaser MUST be mounted in exactly one Vue component
+- **From Phase 3 onward**, Vue 3 (Composition API) MUST own all DOM UI: menus, HUD, city grid,
+  dialogs, settings. From Phase 3, Phaser MUST be mounted in exactly one Vue component
   (`GameCanvas.vue`), created on mount and destroyed on unmount.
+- **Before Phase 3** (no Vue yet, Principle VIII), player-facing UI MUST be drawn in the game
+  canvas. Development-only tools (such as the tuning panel) MAY use minimal plain DOM with no UI
+  framework. They MUST be excluded from production builds, and Phase 3 MUST replace them with
+  Vue.
+- Phaser MUST own only the game canvas.
 - Vue code MUST NOT import Phaser scenes/objects, and Phaser code MUST NOT import Vue
   components or Pinia stores. The two layers MUST communicate only through a typed event bus:
   Phaser emits simulation events; Vue sends commands (`startRun`, `pause`, `resume`,
@@ -113,7 +127,8 @@ sees that is not derived from the sim is decoration, and it must not change resu
   reactive state. This MUST be verified by a unit test that inspects store state.
 
 **Rationale**: Vue reactive proxies wrapped around engine objects degrade performance and blur
-ownership. A typed bus keeps each layer testable and replaceable.
+ownership. A typed bus keeps each layer testable and replaceable. Before Phase 3, a tiny
+dev-only DOM form is cheaper than scaffolding Vue early, and it never reaches players.
 
 ### IV. Test-First Core Logic
 
@@ -162,18 +177,24 @@ can be replayed exactly, for example to check a tester's "unfair miss" report.
 
 ### VI. Performance Budgets
 
-- Gameplay MUST sustain 60 fps on a mid-range Android phone (Pixel 6a / Galaxy A54 class,
-  Chrome) and on an iPhone 12 (Safari). Measurement: a 60-floor Luxury run averages ≥ 58 fps
-  with no frame above 33 ms over a 60-second capture.
-- On 120 Hz displays, rendering MUST run at the display rate (≥ 110 fps average) while the
-  simulation stays at 60 ticks per second. Catch-up MUST be capped at `MAX_TICKS_PER_FRAME`.
-- The MVP initial download MUST be ≤ 5 MB compressed.
-- The render loop MUST NOT allocate per frame (no new objects, arrays, closures, or sprites
-  in hot paths). Objects and sprites SHOULD be pooled and reused.
-- Performance criteria MUST be re-verified whenever a phase adds a layer (Vue shell, final art).
+- Gameplay SHOULD run smoothly at 60 fps on current phones and desktops. There is no
+  per-phase device-measurement gate. The dev perf tools (frame-time capture, auto-drop bot) are
+  diagnostics, used when stutter is noticed or reported, not a required check.
+- Rendering MUST run at the display refresh rate while the simulation stays at 60 ticks per
+  second. Catch-up MUST be capped at `MAX_TICKS_PER_FRAME`. Frame-rate independence MUST be
+  guaranteed by the automated test of Principle II (30/60/120/144 Hz give identical logs and
+  hashes). No hardware refresh-rate check is required.
+- The MVP initial download MUST be ≤ 5 MB compressed, verified by an automated CI check.
+- The render loop SHOULD avoid per-frame allocation (new objects, arrays, closures, or sprites
+  in hot paths). Objects and sprites SHOULD be pooled and reused where it is simple to do so.
+- **Before public release (PRD Phase 5)**: the game MUST be played through once on a real
+  phone (any current mid-range iOS or Android device) with no noticeable stutter. This is the
+  only required hands-on performance check.
 
-**Rationale**: A one-button timing game is unplayable if frames stutter. GC pauses from
-per-frame allocation are the most common cause on mobile.
+**Rationale**: Skyline Stacker is a single screen with a small number of sprites and one input,
+so performance risk is low. Automated checks cover what can cheaply go wrong (frame-rate
+independence, download size). Device measurement is kept for when a real problem shows up, and
+one real-phone playthrough before release confirms that players see a smooth game.
 
 ### VII. Accessibility and Player Respect
 
@@ -246,11 +267,11 @@ code: mixing ‰ with su, or ticks with milliseconds.
   that lists Principles I–IX and states compliance or a justified, approved exception.
 - CI MUST run, on every change: typecheck, ESLint, Prettier check, the forbidden-API check on
   `packages/sim`, a zero-runtime-dependency check on `packages/sim`, Vitest with the coverage
-  threshold, and golden replays in Node.
+  threshold, golden replays in Node, and the download-size check (Principle VI).
 - Cross-browser golden replays (Chromium, WebKit, Firefox via Playwright) MUST pass before a
   phase is marked complete and before any change to `packages/sim` is merged.
-- Performance budgets (Principle VI) MUST be measured on the reference devices at the end of
-  every phase that affects rendering.
+- Performance (Principle VI) has no per-phase measurement gate. The only hands-on check is the
+  real-phone playthrough before public release.
 - Code review MUST reject: game logic outside `packages/sim`, gameplay magic numbers outside
   `tuning.ts`, logic changes without tests, tuning changes without a `TUNING_VERSION` bump and
   regenerated fixtures, and engine objects in reactive state.
@@ -271,9 +292,22 @@ code: mixing ‰ with su, or ticks with milliseconds.
 5. Compliance review: every plan's Constitution Check and every code review MUST verify
    compliance. Exceptions MUST be written down with a rationale and a removal condition.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-26
+**Version**: 1.3.0 | **Ratified**: 2026-09-26 | **Last Amended**: 2026-09-28
 
 **Change log**:
+- 1.3.0 (2026-09-28): Principle VI softened. The 60 fps target is a SHOULD with no per-phase
+  device-measurement gate (iPhone 11, throttled Chrome and 120 Hz checks removed); the perf
+  tools are diagnostics. Per-frame allocation avoidance becomes a SHOULD. Kept as MUST: the
+  fixed-tick/catch-up rules, the automated frame-rate-independence test, and the ≤ 5 MB
+  download (now checked in CI). The pre-release Android measurement is replaced by one
+  real-phone playthrough. Quality gates updated to match.
+- 1.2.0 (2026-09-27): Principle VI: measurement devices are an iPhone 11 (Safari) and desktop
+  Chrome at 4× CPU throttling; a real Pixel 6a–class Android check is required before public
+  release (Phase 5); the 120 Hz hardware check is optional without a 120 Hz display, with
+  frame-rate independence guaranteed by the automated test. Principle III: "Vue owns all DOM
+  UI" applies from Phase 3; before that, dev-only tools may use minimal plain DOM, excluded from
+  production and replaced with Vue in Phase 3. The quality gate on performance measurement was
+  aligned with Principle VI.
 - 1.1.0 (2026-09-26): Principle V amended. `tuning.ts` holds default values; the sim receives
   tuning through its config; the dev panel overrides only in memory in development builds;
   exported runs embed complete tuning values; golden fixtures use current defaults only.

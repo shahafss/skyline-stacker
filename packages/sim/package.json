@@ -1,0 +1,16 @@
+{
+  "name": "@skyline/sim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:fuzz": "vitest run tests/fuzz",
+    "test:coverage": "vitest run --coverage",
+    "replay": "tsx ../../scripts/replay-run.ts"
+  }
+}

@@ -57,10 +57,13 @@ The complete set of tunable gameplay values. Defaults live in `packages/sim/src/
 Type colors (blue, red, green, yellow) are presentation styling. They live in
 `apps/web/src/render/renderConfig.ts`, not in the tuning values.
 
-### 1.3 Structural constants (fixed, not in `TuningValues`)
+### 1.3 Fixed engine constants (not in `TuningValues`)
 
-`TICK_RATE = 60`, `BLOCK_WIDTH = 1000` su, `MAX_TICKS_PER_FRAME = 5`, `SIN_LUT_SIZE = 4096`.
-These are exported from `tuning.ts` but cannot be overridden (see research R10).
+`TICK_RATE = 60`, `BLOCK_WIDTH = 1000` su, `MAX_TICKS_PER_FRAME = 5`, `SIN_LUT_SIZE = 4096`,
+`Q15_SCALE = 32768` (divisor applied to `SIN_LUT` products, PRD §3.3 and §4.1),
+`SWAY_SMOOTHING_DIVISOR = 16` (amplitude smoothing step, PRD §4.3).
+These are exported from `tuning.ts` but cannot be overridden (see research R10), so the sim
+formulas contain no bare numeric literals other than 0, 1, −1, 1000 and bit shifts.
 
 **Validation**: `createSim` throws `SimConfigError` unless every field is present, is a safe
 integer, and is within its bounds. `isDefaultTuning(t)` returns true only when every field equals
@@ -159,7 +162,8 @@ step():
     drop  (phase = swinging): releaseX = craneX, releaseTick = tick,
                               landingTick = tick + DROP_FALL_TICKS, phase = falling,
                               log {tick, 'drop'}, emit release
-    roof  (phase = swinging, eligible): isRoof = 1, roofCommitted = 1, log {tick, 'roof'}
+    roof  (phase = swinging, eligible): isRoof = 1, roofCommitted = 1, log {tick, 'roof'},
+                                        emit roofPlaced
     pendingInput = 0
   if floors ≥ 1: advance swayPhase; smooth swayAmp toward swayTarget; compute swayS
   switch phase:
@@ -223,9 +227,11 @@ the landing tick.
 
 - **InputEvent**: `{ tick: number; type: 'drop' | 'roof' }`. `tick` is the tick on which the input
   was **applied**. The log is strictly increasing in `tick`; there is at most one input per tick.
-- **SimEvent**: PRD §8.3 union, with two extensions:
+- **SimEvent**: PRD §8.3 union, with three extensions:
   - `land` gains `roof: boolean`; a roof landing reports `floor = N` and `pop = 0`.
   - `finished` and `gameOver` gain `floors: number`.
+  - New `roofPlaced { tick }`, emitted on the tick an early-roof input is applied. The HUD uses
+    it to hide the Place Roof button immediately (the block keeps swinging, now as the roof).
 
 ---
 
@@ -251,6 +257,11 @@ A JSON document, specified in [contracts/run-export.schema.json](./contracts/run
 | `inputLog` | `InputEvent[]` |
 | `result` | `RunResult` |
 | `hash` | uint32 final `hashState` |
+
+**Location**: the `RunExport` type, `createRunExport(sim)` and `parseRunExport(value)` live in
+the simulation package (`packages/sim/src/export.ts`). They are pure, with no I/O, so the golden
+fixture generator, the replay CLI, the golden harness and `apps/web` all share one
+implementation. `apps/web` only adds the browser download.
 
 A **GoldenFixture** is a RunExport with `tuningOverridden = false`,
 `tuningVersion = TUNING_VERSION`, and `config.tuning` deep-equal to `DEFAULT_TUNING` (FR-043).
