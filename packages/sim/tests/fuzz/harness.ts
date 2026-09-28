@@ -8,6 +8,12 @@ import type { SimConfig, TowerType } from '../../src/types';
 const TYPE_ROUND_ROBIN: readonly TowerType[] = ['residential', 'commercial', 'office', 'luxury'];
 const MAX_TICKS = 6000;
 
+/**
+ * Per-test timeout for a 2000-config fuzz batch, in ms. A batch takes ~3-6 s, more under v8
+ * coverage on CI runners, which is past Vitest's 5 s default.
+ */
+export const FUZZ_TIMEOUT_MS = 60_000;
+
 function assertAllSafeIntegers(state: Record<string, unknown>): void {
   for (const [key, value] of Object.entries(state)) {
     if (key === 'restX') {

@@ -5,6 +5,8 @@ import { parseRunExport } from '../../src/export';
 import { replay } from '../../src/replay';
 import { DEFAULT_TUNING, TUNING_VERSION } from '../../src/tuning';
 
+/** Timeout for the 1000-replay test, in ms: ~3.5 s locally, slower under coverage on CI. */
+const REPLAY_1000_TIMEOUT_MS = 30_000;
 const FIXTURES_DIR = fileURLToPath(new URL('./fixtures/', import.meta.url));
 
 function loadFixtures(): { name: string; raw: unknown }[] {
@@ -44,15 +46,19 @@ describe('golden fixtures (SC-007, Node)', () => {
     expect(results).toContain('gameOver');
   });
 
-  it('replaying completed-residential 1000 times gives one hash', () => {
-    const fixture = fixtures.find((f) => f.name === 'completed-residential.json');
-    expect(fixture).toBeDefined();
-    const parsed = parseRunExport(fixture?.raw);
-    const hashes = new Set<number>();
-    for (let i = 0; i < 1000; i += 1) {
-      hashes.add(replay(parsed.config, parsed.inputLog).hash);
-    }
-    expect(hashes.size).toBe(1);
-    expect(hashes.has(parsed.hash)).toBe(true);
-  });
+  it(
+    'replaying completed-residential 1000 times gives one hash',
+    () => {
+      const fixture = fixtures.find((f) => f.name === 'completed-residential.json');
+      expect(fixture).toBeDefined();
+      const parsed = parseRunExport(fixture?.raw);
+      const hashes = new Set<number>();
+      for (let i = 0; i < 1000; i += 1) {
+        hashes.add(replay(parsed.config, parsed.inputLog).hash);
+      }
+      expect(hashes.size).toBe(1);
+      expect(hashes.has(parsed.hash)).toBe(true);
+    },
+    REPLAY_1000_TIMEOUT_MS,
+  );
 });
