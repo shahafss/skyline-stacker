@@ -885,23 +885,23 @@ replay it from the command line.
 
 ### Tests for User Story 5 (write first; they must fail)
 
-- [ ] T086 [P] [US5] Write `apps/web/tests/unit/runExport.test.ts`.
+- [X] T086 [P] [US5] Write `apps/web/tests/unit/runExport.test.ts`.
   - `buildDownload(sim)` returns filename `run-<type>-<seed>.json` and JSON text equal to
     `createRunExport(sim)`, with `tuningOverridden` true for a sim created with modified tuning.
   - It is unavailable (returns null) before a result.
-- [ ] T087 [P] [US5] Write `scripts/tests/replay-run.test.ts`. Run `scripts/replay-run.ts` on
+- [X] T087 [P] [US5] Write `scripts/tests/replay-run.test.ts`. Run `scripts/replay-run.ts` on
   each golden fixture and on a generated overridden-tuning export. Assert the output contains
   `MATCH` and exit code 0. A tampered hash gives `MISMATCH` and exit code 1.
 
 ### Implementation for User Story 5
 
-- [ ] T088 [US5] Implement `apps/web/src/export/runExport.ts`.
+- [X] T088 [US5] Implement `apps/web/src/export/runExport.ts`.
   - `buildDownload(sim)` uses `createRunExport`, and `triggerDownload({ filename, text })` uses a
     `Blob` and a temporary `<a download>`. There is no network call (Principle VII).
   - Bind key `E` in `apps/web/src/scenes/GameScene.ts`, active only after a result, in every
     build.
   - Show the "Run exported" text **from `STRINGS` (T059)** in the HUD banner.
-- [ ] T089 [US5] Implement `scripts/replay-run.ts`.
+- [X] T089 [US5] Implement `scripts/replay-run.ts`.
   - Read a JSON path, call `parseRunExport`, then `replay` using **the export's own tuning**
     (FR-050).
   - Print the result, score, floors, hash, tuningVersion, tuningOverridden, and `MATCH` or
@@ -1137,3 +1137,36 @@ from the prior pass.
   `keydown-ESC` → `returnToSelect()`), implemented per T078 ("return to it with Esc or after the
   result banner"), but the committed control contract has no row for it. Add a row documenting
   this control so the contract matches the implemented behavior (partial).
+
+---
+
+## Phase 14: Convergence
+
+**Purpose**: Remediation found by a third `/speckit-converge` pass, run after Phases 9–10
+(T082–T089) were implemented. This phase does not re-list the still-open T090–T097.
+
+- [ ] T098 Strengthen the overridden-tuning case in `scripts/tests/replay-run.test.ts` so it
+  proves the export's own tuning is used: assert the output contains `tuningOverridden: true`,
+  override a value that always changes the hash (for example the type's `cranePeriodTicks` or
+  `swayMult`) instead of only `LIVES`, and assert that `replay` with `DEFAULT_TUNING` gives a
+  different hash for that export. Also remove the `mkdtempSync` temp directory in an `afterAll`
+  per FR-050, US5/AC1 (partial)
+- [ ] T099 Fix the run-as-main guard in `scripts/replay-run.ts`: it compares `import.meta.url` to
+  `` `file://${process.argv[1]}` ``, which fails for paths with spaces, other percent-encoded
+  characters, or symlinks, so the CLI then prints nothing and exits 0. Compare
+  `fileURLToPath(import.meta.url)` with `realpathSync(process.argv[1])` instead, and add a test
+  that runs the script through a path that needs encoding, per T089 (partial)
+- [ ] T100 Stop allocating a new `DebugSnapshot` object every frame: `GameScene.update` calls
+  `readDebugSnapshot(...)`, which returns a fresh object literal each frame even while the overlay
+  is hidden. Fill a preallocated snapshot in place, and skip the read while the overlay is hidden,
+  per plan: "No per-frame allocations in the render loop" (Principle VI) (contradicts)
+- [ ] T101 Add a case to `scripts/tests/replay-run.test.ts` where an export's `tuningVersion`
+  differs from the current `TUNING_VERSION`, and assert that it still replays with `MATCH` and
+  exit code 0, per FR-050 (partial)
+- [ ] T102 Show the debug overlay's last tier as a name (none / Perfect / Good / Miss) from
+  `STRINGS` in `apps/web/src/dev/DebugOverlay.ts`, not the raw `TIER_*` integer code, per FR-037
+  (partial)
+- [ ] T103 Make `scripts/replay-run.ts` report a missing, unreadable or malformed file (and a
+  `ReplayError`) as a one-line error with exit code 1 instead of an uncaught stack trace. Resolve a
+  relative path against the directory the user ran the command from (`INIT_CWD` when run through
+  `pnpm --filter`, which runs in `packages/sim`), per T089 and quickstart step 5 (partial)

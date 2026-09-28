@@ -13,6 +13,7 @@ import { Hud } from '../hud/Hud';
 import { setupVisibilityAutoPause } from '../lifecycle/visibility';
 import { DebugOverlay, readDebugSnapshot } from '../dev/DebugOverlay';
 import type { TuningPanel } from '../dev/TuningPanel';
+import { buildDownload, triggerDownload } from '../export/runExport';
 
 export interface GameSceneData {
   config?: SimConfig;
@@ -117,6 +118,7 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-ESC', this.returnToSelect);
     this.input.keyboard?.on('keydown-D', this.toggleDebugOverlay);
     this.input.keyboard?.on('keydown-T', this.toggleTuningPanel);
+    this.input.keyboard?.on('keydown-E', this.exportRun);
 
     this.loop = new FixedStepLoop({
       step: () => this.sim.step(),
@@ -145,6 +147,7 @@ export class GameScene extends Phaser.Scene {
       this.removeVisibilityListener?.();
       this.input.keyboard?.off('keydown-D', this.toggleDebugOverlay);
       this.input.keyboard?.off('keydown-T', this.toggleTuningPanel);
+      this.input.keyboard?.off('keydown-E', this.exportRun);
       this.tuningPanel?.destroy();
       this.tuningPanel = null;
     });
@@ -280,6 +283,16 @@ export class GameScene extends Phaser.Scene {
 
   private readonly toggleDebugOverlay = (): void => {
     this.debugOverlay.toggle();
+  };
+
+  /** Downloads the finished run as JSON (FR-041), active only after a result, every build. */
+  private readonly exportRun = (): void => {
+    const download = buildDownload(this.sim);
+    if (download === null) {
+      return;
+    }
+    triggerDownload(download);
+    this.hud.showExportedNotice();
   };
 
   /** Dynamically imports the dev-only tuning panel on first use (FR-038), DEV builds only. */

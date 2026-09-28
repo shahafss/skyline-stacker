@@ -38,6 +38,7 @@ export class Hud {
   private readonly resultBanner: Phaser.GameObjects.Text;
   private readonly resultScoreText: Phaser.GameObjects.Text;
   private readonly playAgainText: Phaser.GameObjects.Text;
+  private readonly exportedText: Phaser.GameObjects.Text;
 
   private readonly roofButtonBg: Phaser.GameObjects.Rectangle;
   private readonly roofButtonText: Phaser.GameObjects.Text;
@@ -126,6 +127,16 @@ export class Hud {
     this.playAgainText.setOrigin(0.5, 0.5);
     this.playAgainText.setVisible(false);
 
+    this.exportedText = scene.add.text(0, 0, STRINGS.runExported, {
+      color: HUD_TEXT_COLOR,
+      fontSize: '16px',
+      fontFamily: 'monospace',
+    });
+    this.exportedText.setScrollFactor(0);
+    this.exportedText.setDepth(200);
+    this.exportedText.setOrigin(0.5, 0.5);
+    this.exportedText.setVisible(false);
+
     const roofX = this.scene.scale.width / 2;
     const roofY = this.scene.scale.height - 100;
     this.roofButtonBg = scene.add.rectangle(
@@ -189,6 +200,7 @@ export class Hud {
     this.resultBanner.setVisible(true);
     this.resultScoreText.setVisible(true);
     this.playAgainText.setVisible(true);
+    this.exportedText.setVisible(false);
   }
 
   /** True once the end-of-run banner is showing (used by the Playwright dev hook). */
@@ -200,6 +212,12 @@ export class Hud {
     this.resultBanner.setVisible(false);
     this.resultScoreText.setVisible(false);
     this.playAgainText.setVisible(false);
+    this.exportedText.setVisible(false);
+  }
+
+  /** Shows the "Run exported" notice in the HUD banner after a successful export (FR-041). */
+  showExportedNotice(): void {
+    this.exportedText.setVisible(true);
   }
 
   /**
@@ -252,5 +270,6 @@ export class Hud {
     this.resultBanner.setPosition(cx, cy - 40);
     this.resultScoreText.setPosition(cx, cy + 20);
     this.playAgainText.setPosition(cx, cy + 60);
+    this.exportedText.setPosition(cx, cy + 90);
   }
 }
