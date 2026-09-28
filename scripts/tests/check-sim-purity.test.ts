@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { execFileSync } from 'node:child_process';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { afterEach, describe, expect, it } from 'vitest';
 import { checkSimPackageJson, scanSource } from '../check-sim-purity';
+
+const TSX_BIN = fileURLToPath(new URL('../../node_modules/.bin/tsx', import.meta.url));
+const SCRIPT_PATH = fileURLToPath(new URL('../check-sim-purity.ts', import.meta.url));
+const IS_MAIN_MODULE_PATH = fileURLToPath(new URL('../isMainModule.ts', import.meta.url));
 
 function rules(text: string, fileName = 'packages/sim/src/probe.ts'): string[] {
   return scanSource(text, fileName).map((v) => v.rule);
@@ -134,5 +143,47 @@ describe('checkSimPackageJson', () => {
 
   it('accepts a package.json with neither', () => {
     expect(checkSimPackageJson({ name: '@skyline/sim' })).toEqual([]);
+  });
+});
+
+describe('scripts/check-sim-purity.ts main() CLI', () => {
+  const spaceDirs: string[] = [];
+
+  afterEach(() => {
+    for (const dir of spaceDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('still fails (exit 1, reporting the violation) when run through a path containing a space', () => {
+    // A naive `import.meta.url === \`file://${process.argv[1]}\`` check silently returns false
+    // for a path needing percent-encoding, which disables the `main()` call entirely: the CLI
+    // would print nothing and exit 0 even with a forbidden API present. Reproduces that path
+    // shape and asserts the gate still fires (T104).
+    const spaceDir = mkdtempSync(join(tmpdir(), 'check sim purity '));
+    spaceDirs.push(spaceDir);
+
+    const scriptCopy = join(spaceDir, 'check-sim-purity.ts');
+    copyFileSync(SCRIPT_PATH, scriptCopy);
+    copyFileSync(IS_MAIN_MODULE_PATH, join(spaceDir, 'isMainModule.ts'));
+
+    const simSrcDir = join(spaceDir, 'packages/sim/src');
+    mkdirSync(simSrcDir, { recursive: true });
+    writeFileSync(join(simSrcDir, 'probe.ts'), 'export const x = Math.random();\n');
+    writeFileSync(join(spaceDir, 'packages/sim/package.json'), '{"name":"@skyline/sim"}\n');
+
+    function run(): { readonly stdout: string; readonly stderr: string; readonly status: number } {
+      try {
+        const stdout = execFileSync(TSX_BIN, [scriptCopy], { encoding: 'utf8', cwd: spaceDir });
+        return { stdout, stderr: '', status: 0 };
+      } catch (error) {
+        const e = error as { stdout?: string; stderr?: string; status?: number | null };
+        return { stdout: e.stdout ?? '', stderr: e.stderr ?? '', status: e.status ?? 1 };
+      }
+    }
+
+    const { stdout, stderr, status } = run();
+    expect(status).toBe(1);
+    expect(stdout + stderr).toContain('no-math-random');
   });
 });

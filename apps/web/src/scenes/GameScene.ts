@@ -11,7 +11,7 @@ import { CollapseFx } from '../fx/CollapseFx';
 import { Particles } from '../fx/Particles';
 import { Hud } from '../hud/Hud';
 import { setupVisibilityAutoPause } from '../lifecycle/visibility';
-import { DebugOverlay, createDebugSnapshot, fillDebugSnapshot } from '../dev/DebugOverlay';
+import { DebugOverlay, createDebugSnapshot, refreshDebugSnapshot } from '../dev/DebugOverlay';
 import type { TuningPanel } from '../dev/TuningPanel';
 import type { PerfCapture } from '../dev/PerfCapture';
 import type { AutoBot } from '../dev/AutoBot';
@@ -194,8 +194,13 @@ export class GameScene extends Phaser.Scene {
   override update(_time: number, delta: number): void {
     this.loop.advance(delta);
     this.render();
+    refreshDebugSnapshot(
+      this.debugSnapshot,
+      this.debugOverlay.visible,
+      this.sim.getState(),
+      this.game.loop.actualFps,
+    );
     if (this.debugOverlay.visible) {
-      fillDebugSnapshot(this.debugSnapshot, this.sim.getState(), this.game.loop.actualFps);
       this.debugOverlay.update(this.debugSnapshot, delta);
     }
     this.autoBot?.update();

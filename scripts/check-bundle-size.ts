@@ -1,7 +1,7 @@
-import { readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { isMainModule } from './isMainModule';
 
 /** MVP initial download budget: 5 MB compressed (Principle VI). */
 const MAX_BUNDLE_BYTES = 5 * 1024 * 1024; // 5,242,880 bytes
@@ -46,16 +46,6 @@ export function main(): void {
   }
 }
 
-function isMainModule(): boolean {
-  const argv1 = process.argv[1];
-  if (argv1 === undefined) return false;
-  try {
-    return fileURLToPath(import.meta.url) === realpathSync(argv1);
-  } catch {
-    return false;
-  }
-}
-
-if (isMainModule()) {
+if (isMainModule(import.meta.url)) {
   main();
 }

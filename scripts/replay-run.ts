@@ -1,8 +1,8 @@
-import { realpathSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseRunExport } from '../packages/sim/src/export';
 import { replay } from '../packages/sim/src/replay';
+import { isMainModule } from './isMainModule';
 
 /** Resolves `path` against the directory the user ran the command from, when it is relative. */
 function resolveInputPath(path: string): string {
@@ -56,16 +56,6 @@ export function main(argv: readonly string[]): number {
   return matches ? 0 : 1;
 }
 
-function isMainModule(): boolean {
-  const argv1 = process.argv[1];
-  if (argv1 === undefined) return false;
-  try {
-    return fileURLToPath(import.meta.url) === realpathSync(argv1);
-  } catch {
-    return false;
-  }
-}
-
-if (isMainModule()) {
+if (isMainModule(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }

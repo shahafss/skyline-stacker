@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { isMainModule } from './isMainModule';
 import { cloneTuning } from '../packages/sim/src/config';
 import { createRunExport } from '../packages/sim/src/export';
 import { DEFAULT_TUNING } from '../packages/sim/src/tuning';
@@ -75,6 +76,6 @@ export function main(): void {
   );
 }
 
-if (import.meta.url === `file://${process.argv[1] ?? ''}`) {
+if (isMainModule(import.meta.url)) {
   main();
 }

@@ -1,4 +1,5 @@
 import { writeFileSync } from 'node:fs';
+import { isMainModule } from './isMainModule';
 
 const SIZE = 4096;
 
@@ -53,6 +54,6 @@ export function main(): void {
   writeFileSync(outPath, render(table, checksum));
 }
 
-if (import.meta.url === `file://${process.argv[1] ?? ''}`) {
+if (isMainModule(import.meta.url)) {
   main();
 }

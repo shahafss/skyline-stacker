@@ -83,6 +83,23 @@ export function fillDebugSnapshot(
   out.fps = Math.round(actualFps);
 }
 
+/**
+ * Fills `out` from live state, but only while the overlay is visible (Principle VI: no wasted
+ * per-frame work — reading state and rebuilding the snapshot — while it isn't even shown). Moved
+ * out of `GameScene.update` (T100) so this decision has a Phaser-free test.
+ */
+export function refreshDebugSnapshot(
+  out: DebugSnapshot,
+  isVisible: boolean,
+  state: Readonly<SimState>,
+  actualFps: number,
+): void {
+  if (!isVisible) {
+    return;
+  }
+  fillDebugSnapshot(out, state, actualFps);
+}
+
 /** Maps a `TIER_*` code (including `TIER_NONE`, before any drop has landed) to its display name. */
 export function tierName(tier: number): string {
   switch (tier) {

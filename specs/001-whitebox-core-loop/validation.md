@@ -125,6 +125,18 @@ from the quickstart validation map.
 Note: the quickstart's name filters (`-- sinLut`, `-- tiers`, …) do not narrow the run; each
 command runs the whole package suite, which passes.
 
+**2026-09-28 (T111)**: fixed. `vitest run -- <name>` passes `<name>` through to the underlying
+test runner rather than to vitest's own filter, so it does not narrow the run; `vitest run <name>`
+(no `--`) is vitest's own filename-pattern filter and does narrow it. The quickstart's SC-003 to
+SC-009 commands were changed from `pnpm --filter <pkg> test -- <name>` to
+`pnpm --filter <pkg> test <name>`, and each was re-run to confirm it now reports exactly one
+matching test file: `sinLut` (1 file, 4 tests), `tiers` (1 file, 12 tests), `caps` (1 file, 5
+tests), `rules` (1 file, 7 tests), `golden` (1 file, 7 tests), `loop-framerate` (1 file, 1 test),
+`InputController` (1 file, 8 tests). The "All CI gates" row was also fixed (T110): `pnpm ci` is
+pnpm's built-in clean install, not the repo's `ci` script, and does not run coverage; the row now
+reads `pnpm run ci` plus a separate `pnpm --filter @skyline/sim test:coverage`, both confirmed
+passing (`pnpm run ci`: 37 files, 292 tests; coverage: 188 tests, lines 99.26%).
+
 ### Manual playability (SC-011)
 
 | Check | How | Result |
@@ -133,7 +145,7 @@ command runs the whole package suite, which passes.
 | Place Roof (pointer) | Manual, by the developer: Residential, button appeared at 15 floors, pressed it, the block became the roof, landed, run ended | Pass (result Built) |
 | Completed run, all four types | Scripted: dev auto-bot (`B`) on Residential, Commercial, Office, Luxury | Pass: all **Completed** at 30 / 40 / 50 / 60 floors, 0 strikes |
 | Completion bonus +20% (truncated) | HUD score before the roof vs final score | Pass: 828 → 993, 1692 → 2030, 2860 → 3432, 5188 → 6225 |
-| Touch on a phone | iPhone 11, Safari | Not yet recorded |
+| Touch on a phone | Manual, by the developer: iPhone 11, iOS 26.6.1, tapping to drop | Pass |
 | Game-over run, Quick Play run | Not run by hand; rules and results are covered by SC-006 and the golden fixtures (a game-over fixture exists) | Not run manually |
 
 ### Export and replay

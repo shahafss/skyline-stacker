@@ -17,14 +17,14 @@ pnpm install
 ```
 
 ```bash
-pnpm dev
+pnpm --filter @skyline/web dev
 ```
 
 This opens the Vite dev server for `apps/web`. Press `1` to start a Residential run and `Space` to
 drop. `D` toggles the debug overlay, and `T` opens the tuning panel (dev only).
 
 ```bash
-pnpm build && pnpm --filter @skyline/web preview
+pnpm --filter @skyline/web build && pnpm --filter @skyline/web preview
 ```
 
 The production build must not contain the tuning panel. Check that `T` does nothing in preview.
@@ -35,23 +35,24 @@ The production build must not contain the tuning panel. Check that `T` does noth
 | --- | --- | --- |
 | SC-001 isolation + forbidden APIs | `pnpm lint` and `pnpm check:sim-purity` | Both pass. Adding `Math.random()` to any file in `packages/sim/src` makes **both** fail |
 | SC-002 fuzz | `pnpm --filter @skyline/sim test:fuzz` | 10,000 runs, 0 exceptions, all values safe integers |
-| SC-003 sine table | `pnpm --filter @skyline/sim test -- sinLut` and `pnpm gen:sin-lut && git diff --exit-code` | 4096 entries in range, checksum matches, regenerated file identical |
-| SC-004 tiers | `pnpm --filter @skyline/sim test -- tiers` | ±0, ±50 Perfect; ±51, ±250 Good; ±251 Miss |
-| SC-005 caps | `pnpm --filter @skyline/sim test -- caps` | All five caps hold |
-| SC-006 rules | `pnpm --filter @skyline/sim test -- rules` | All seven rules pass |
-| SC-007 determinism (Node) | `pnpm --filter @skyline/sim test -- golden` | Every fixture matches its score and hash; 1,000 replays give one hash |
+| SC-003 sine table | `pnpm --filter @skyline/sim test sinLut` and `pnpm gen:sin-lut && git diff --exit-code` | 4096 entries in range, checksum matches, regenerated file identical |
+| SC-004 tiers | `pnpm --filter @skyline/sim test tiers` | ±0, ±50 Perfect; ±51, ±250 Good; ±251 Miss |
+| SC-005 caps | `pnpm --filter @skyline/sim test caps` | All five caps hold |
+| SC-006 rules | `pnpm --filter @skyline/sim test rules` | All seven rules pass |
+| SC-007 determinism (Node) | `pnpm --filter @skyline/sim test golden` | Every fixture matches its score and hash; 1,000 replays give one hash |
 | SC-007 determinism (browsers) | `pnpm --filter @skyline/golden-harness test:e2e` | Same results in chromium, webkit and firefox projects |
-| SC-008 frame-rate independence | `pnpm --filter @skyline/web test -- loop-framerate` | 30/60/120/144 Hz give identical logs and hashes |
-| SC-009 input latency | `pnpm --filter @skyline/web test -- InputController` | Injected drop applied on tick + 1 |
+| SC-008 frame-rate independence | `pnpm --filter @skyline/web test loop-framerate` | 30/60/120/144 Hz give identical logs and hashes |
+| SC-009 input latency | `pnpm --filter @skyline/web test InputController` | Injected drop applied on tick + 1 |
 | Coverage (Principle IV) | `pnpm --filter @skyline/sim test:coverage` | Lines ≥ 90% |
-| All CI gates | `pnpm ci` | typecheck, lint, format check, purity, unit/fuzz/golden, coverage |
+| All CI gates | `pnpm run ci` and `pnpm --filter @skyline/sim test:coverage` | `pnpm run ci` runs typecheck, lint, format check, purity, and unit/fuzz/golden tests; the root `ci` script does not run coverage, so `test:coverage` must be run separately |
 
 ## Manual playability check (SC-011)
 
-Run `pnpm dev`, then:
+Run `pnpm --filter @skyline/web dev`, then:
 
 1. **Residential completed run**: press `1`, play to 30 floors and land the roof, using the mouse
-   for some drops, `Space` for others, and touch (a phone on the LAN via `pnpm dev --host`).
+   for some drops, `Space` for others, and touch (a phone on the LAN via
+   `pnpm --filter @skyline/web dev --host`).
    - Expect result **Completed**.
    - Expect score = floor population + 20%, truncated.
 2. **Game over run**: start any type and miss three times.
@@ -81,8 +82,9 @@ Use this when stutter is noticed or reported. It is not a pass/fail gate (consti
 Principle VI, v1.3.0). As a guide, a smooth run averages about 60 fps with no frame above 33 ms.
 
 1. Make a production build with the perf tools switched on, and serve it on the LAN:
-   `VITE_PERF_TOOLS=1 pnpm build && pnpm --filter @skyline/web preview --host`. This keeps the
-   optimized bundle but includes the bot and perf capture. The tuning panel stays excluded.
+   `VITE_PERF_TOOLS=1 pnpm --filter @skyline/web build && pnpm --filter @skyline/web preview --host`.
+   This keeps the optimized bundle but includes the bot and perf capture. The tuning panel stays
+   excluded.
 2. **A phone (Safari or Chrome)**: open `http://<desktop-LAN-IP>:4173/?perf=luxury`. This starts a
    Luxury run with the auto-drop bot and begins the 60-second capture automatically once the
    tower passes 50 floors, because the phone has no keyboard for `4` / `B` / `P`. The report

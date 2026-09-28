@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { isMainModule } from './isMainModule';
 
 export interface Violation {
   file: string;
@@ -315,6 +316,6 @@ export function main(): void {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1] ?? ''}`) {
+if (isMainModule(import.meta.url)) {
   main();
 }

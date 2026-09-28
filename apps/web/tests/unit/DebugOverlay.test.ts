@@ -4,6 +4,7 @@ import {
   createDebugSnapshot,
   fillDebugSnapshot,
   formatFieldValue,
+  refreshDebugSnapshot,
   tierName,
   type DebugSnapshot,
 } from '../../src/dev/DebugOverlay';
@@ -70,24 +71,35 @@ describe('fillDebugSnapshot', () => {
     expect(out.lastTier).toBe(TIER_MISS);
     expect(out.fps).toBe(60);
   });
+});
 
-  it('never allocates a new object across repeated fills with differing inputs', () => {
+describe('refreshDebugSnapshot', () => {
+  it('leaves the snapshot untouched while the overlay is hidden', () => {
+    const out = createDebugSnapshot();
+    fillDebugSnapshot(out, makeState({ tick: 1, lastTier: TIER_GOOD }), 30);
+    const before = { ...out };
+
+    refreshDebugSnapshot(out, false, makeState({ tick: 99, lastTier: TIER_MISS }), 60);
+
+    expect(out).toEqual(before);
+  });
+
+  it('fills the same (pre-allocated) object in place when the overlay is visible', () => {
     const out = createDebugSnapshot();
     const identity = out;
 
-    for (let i = 0; i < 5; i++) {
-      fillDebugSnapshot(
-        out,
-        makeState({ tick: i, lastOffset: i * 2, lastTier: i % 2 === 0 ? TIER_GOOD : TIER_MISS }),
-        i * 10,
-      );
+    refreshDebugSnapshot(
+      out,
+      true,
+      makeState({ tick: 7, lastOffset: 2, lastTier: TIER_PERFECT }),
+      59.6,
+    );
 
-      // fillDebugSnapshot must mutate `out` in place, not allocate a replacement.
-      expect(Object.is(out, identity)).toBe(true);
-      expect(out.tick).toBe(i);
-      expect(out.lastOffset).toBe(i * 2);
-      expect(out.fps).toBe(i * 10);
-    }
+    expect(Object.is(out, identity)).toBe(true);
+    expect(out.tick).toBe(7);
+    expect(out.lastOffset).toBe(2);
+    expect(out.lastTier).toBe(TIER_PERFECT);
+    expect(out.fps).toBe(60);
   });
 });
 

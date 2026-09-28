@@ -943,7 +943,7 @@ replay it from the command line.
   `dev/tuningPanelModel.ts`, `dev/PerfCapture.ts` and `dev/AutoBot.ts`) for user-facing
   string literals, and move any found into `strings.ts`. Record the findings in
   `specs/001-whitebox-core-loop/validation.md`.
-- [ ] T093 Run the full [quickstart.md](./quickstart.md) validation map and record each SC-001 …
+- [X] T093 Run the full [quickstart.md](./quickstart.md) validation map and record each SC-001 …
   SC-011 result in `specs/001-whitebox-core-loop/validation.md`. Include:
   - The manual playability checks with mouse, touch and Space (SC-011).
   - The Place Roof check (the button hides right after the press).
@@ -1167,3 +1167,65 @@ from the prior pass.
   `ReplayError`) as a one-line error with exit code 1 instead of an uncaught stack trace. Resolve a
   relative path against the directory the user ran the command from (`INIT_CWD` when run through
   `pnpm --filter`, which runs in `packages/sim`), per T089 and quickstart step 5 (partial)
+
+---
+
+## Phase 15: Convergence
+
+**Purpose**: Remediation found by a fourth `/speckit-converge` pass, run after Phase 11 and
+Phases 12–14 were implemented. This phase does not re-list T093, which remains open for the
+manual touch check.
+
+- [X] T104 Replace the fragile run-as-main check
+  (`` import.meta.url === `file://${process.argv[1] ?? ''}` ``) in `scripts/check-sim-purity.ts`,
+  `scripts/check-prod-bundle.ts`, `scripts/gen-golden.ts` and `scripts/gen-sin-lut.ts` with the
+  realpath-based check used in `scripts/replay-run.ts` (T099). Today these scripts print nothing
+  and exit 0 when the path needs URL encoding or goes through a symlink, which silently disables
+  the CI gates. Extract the check into one shared helper under `scripts/` if that keeps it
+  simple, and add a test that `check-sim-purity.ts` still fails on a forbidden API when run
+  through a path containing a space, per Constitution I (independent CI forbidden-API check)
+  (partial)
+- [X] T105 Extend `scripts/check-prod-bundle.ts` to also fail when a plain production build in
+  `apps/web/dist/` contains the perf tools (an `AutoBot`/`PerfCapture` chunk file, or a marker
+  string unique to them), and add a test for it, per T090 ("Include them only when
+  `import.meta.env.DEV || __PERF_TOOLS__`") and Constitution III (dev-only tools excluded from
+  production builds) (partial)
+- [X] T106 In `scripts/tests/replay-run.test.ts`, make the missing-file, bad-JSON and
+  `ReplayError` cases assert the error text (for example `toMatch(/^replay-run: \S/)`, and the
+  `ReplayError` message), not only that `stderr` has one line, which an empty `stderr` also
+  satisfies. Pass `stdio: ['ignore', 'pipe', 'pipe']` in `runReplay` so the expected error lines
+  do not leak into the CI log, per T103 (partial)
+- [X] T107 Stop the T099 space-in-path test in `scripts/tests/replay-run.test.ts` from writing
+  `replay run */` into the repo root: build the space-named directory under `os.tmpdir()` and
+  link the needed `scripts/` and `packages/` folders into it, and add a symlinked-path case,
+  per T099 (partial)
+- [X] T108 Replace the tautological `Object.is(out, identity)` assertion in
+  `apps/web/tests/unit/DebugOverlay.test.ts`. Test the real T100 behavior instead: move the
+  "skip the snapshot read while the overlay is hidden, reuse one preallocated snapshot" logic out
+  of `GameScene.update` into a small Phaser-free helper and test that it leaves the snapshot
+  untouched while hidden and fills the same object when visible, per T100 (partial)
+- [X] T109 Fix the run commands in [quickstart.md](./quickstart.md): the repo root has no
+  `dev`, `build` or `preview` scripts, so `pnpm dev`, `pnpm dev --host` and `pnpm build` must be
+  `pnpm --filter @skyline/web dev` / `build`, per T095 and the quickstart's own setup steps
+  (partial)
+
+---
+
+## Phase 16: Convergence
+
+**Purpose**: Remediation found by a fifth `/speckit-converge` pass, run after Phase 15 (T104–T109)
+was implemented.
+
+- [X] T110 Fix the "All CI gates" row of the validation map in [quickstart.md](./quickstart.md):
+  `pnpm ci` is pnpm's built-in clean install (it deletes every `node_modules` folder and
+  reinstalls) and runs none of the repo's checks. Use `pnpm run ci`, and list
+  `pnpm --filter @skyline/sim test:coverage` separately, since the root `ci` script does not run
+  coverage, per T109 and the quickstart's validation map (partial)
+- [X] T111 Fix the per-criterion test commands in the [quickstart.md](./quickstart.md) validation
+  map (SC-003 to SC-009): `pnpm --filter <pkg> test -- <name>` runs the whole package suite
+  instead of the named tests. Use a form that actually narrows the run (for example
+  `pnpm --filter @skyline/sim test tiers`), and confirm each command runs only the intended test
+  files. `validation.md` sections are append-only, so leave the T093 note that says the filters
+  do not narrow the run, and add a dated line below it recording the fix, per T109 (partial)
+- [X] T112 Replace the local `isMainModule()` copy in `scripts/check-bundle-size.ts` with the
+  shared `scripts/isMainModule.ts` helper, per T104 ("one shared helper") (partial)

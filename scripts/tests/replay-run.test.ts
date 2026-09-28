@@ -5,6 +5,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -21,7 +22,8 @@ import type { SimConfig } from '../../packages/sim/src/types';
 
 const TSX_BIN = fileURLToPath(new URL('../../node_modules/.bin/tsx', import.meta.url));
 const SCRIPT_PATH = fileURLToPath(new URL('../replay-run.ts', import.meta.url));
-const REPO_ROOT = fileURLToPath(new URL('../../', import.meta.url));
+const IS_MAIN_MODULE_PATH = fileURLToPath(new URL('../isMainModule.ts', import.meta.url));
+const PACKAGES_DIR = fileURLToPath(new URL('../../packages/', import.meta.url));
 const FIXTURES_DIR = fileURLToPath(
   new URL('../../packages/sim/tests/golden/fixtures/', import.meta.url),
 );
@@ -40,6 +42,7 @@ function runReplay(
     const stdout = execFileSync(TSX_BIN, [SCRIPT_PATH, ...args], {
       encoding: 'utf8',
       env: options?.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
     return { stdout, stderr: '', status: 0 };
   } catch (error) {
@@ -78,11 +81,11 @@ function overriddenExport(): unknown {
 
 describe('scripts/replay-run.ts', () => {
   const tmpDir = mkdtempSync(join(tmpdir(), 'replay-run-test-'));
-  const spacePathDirs: string[] = [];
+  const extraDirs: string[] = [];
 
   afterAll(() => {
     rmSync(tmpDir, { recursive: true, force: true });
-    for (const dir of spacePathDirs) {
+    for (const dir of extraDirs) {
       rmSync(dir, { recursive: true, force: true });
     }
   });
@@ -151,12 +154,18 @@ describe('scripts/replay-run.ts', () => {
   });
 
   it('runs main when invoked through a path that needs percent-encoding (a space)', () => {
-    // The copy must sit one directory below the repo root, mirroring scripts/replay-run.ts, so
-    // its relative imports ('../packages/sim/...') still resolve correctly.
-    const spaceDir = mkdtempSync(join(REPO_ROOT, 'replay run '));
-    spacePathDirs.push(spaceDir);
+    // Built entirely under os.tmpdir(), never inside the repo. The copy's relative imports
+    // ('../packages/sim/...', './isMainModule') need `packages/` and `isMainModule.ts` to sit
+    // next to it the same way they do relative to the real scripts/replay-run.ts, so a `packages`
+    // symlink is linked in one directory up and isMainModule.ts is copied alongside the script.
+    const parentDir = mkdtempSync(join(tmpdir(), 'replay-run-space-test-'));
+    extraDirs.push(parentDir);
+    symlinkSync(PACKAGES_DIR, join(parentDir, 'packages'));
+
+    const spaceDir = mkdtempSync(join(parentDir, 'replay run '));
     const scriptCopy = join(spaceDir, 'replay-run.ts');
     copyFileSync(SCRIPT_PATH, scriptCopy);
+    copyFileSync(IS_MAIN_MODULE_PATH, join(spaceDir, 'isMainModule.ts'));
 
     const fixture = goldenFixtures()[0];
     if (fixture === undefined) {
@@ -168,12 +177,34 @@ describe('scripts/replay-run.ts', () => {
     expect(stdout).not.toContain('MISMATCH');
   });
 
+  it('runs main when invoked through a symlinked path', () => {
+    // isMainModule() compares realpathSync(argv[1]) against the module's own resolved URL; this
+    // guards against silently returning false (and disabling main()) when the entry point is
+    // reached through a symlink rather than a direct path (T099/T104).
+    const parentDir = mkdtempSync(join(tmpdir(), 'replay-run-symlink-test-'));
+    extraDirs.push(parentDir);
+    const symlinkPath = join(parentDir, 'replay-run-link.ts');
+    symlinkSync(SCRIPT_PATH, symlinkPath);
+
+    const fixture = goldenFixtures()[0];
+    if (fixture === undefined) {
+      throw new Error('no golden fixtures found');
+    }
+
+    const stdout = execFileSync(TSX_BIN, [symlinkPath, fixture], { encoding: 'utf8' });
+    expect(stdout).toContain('MATCH');
+    expect(stdout).not.toContain('MISMATCH');
+  });
+
   it('reports a missing file as a one-line error with exit code 1', () => {
     const path = join(tmpDir, 'does-not-exist.json');
     const { stdout, stderr, status } = runReplay([path]);
     expect(status).toBe(1);
     expect(stdout).toBe('');
-    expect(stderr.trim().split('\n')).toHaveLength(1);
+    const lines = stderr.trim().split('\n');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^replay-run: \S/);
+    expect(stderr).toContain('ENOENT');
     expect(stderr).not.toContain('    at ');
   });
 
@@ -183,7 +214,10 @@ describe('scripts/replay-run.ts', () => {
     const { stdout, stderr, status } = runReplay([path]);
     expect(status).toBe(1);
     expect(stdout).toBe('');
-    expect(stderr.trim().split('\n')).toHaveLength(1);
+    const lines = stderr.trim().split('\n');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toMatch(/^replay-run: \S/);
+    expect(stderr).toContain('JSON');
     expect(stderr).not.toContain('    at ');
   });
 
@@ -200,7 +234,9 @@ describe('scripts/replay-run.ts', () => {
     const { stdout, stderr, status } = runReplay([path]);
     expect(status).toBe(1);
     expect(stdout).toBe('');
-    expect(stderr.trim().split('\n')).toHaveLength(1);
+    const lines = stderr.trim().split('\n');
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toBe('replay-run: input log ticks must be strictly increasing');
     expect(stderr).not.toContain('    at ');
   });
 
