@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import type { SimState } from '@skyline/sim';
+import { TIER_GOOD, TIER_MISS, TIER_NONE, TIER_PERFECT } from '@skyline/sim';
 import { STRINGS } from '../strings';
 
 const PANEL_MARGIN = 12;
@@ -43,21 +44,63 @@ export interface DebugSnapshot {
   fps: number;
 }
 
-/** Builds a `DebugSnapshot` from live sim state and the scene's measured frame rate. */
-export function readDebugSnapshot(state: Readonly<SimState>, actualFps: number): DebugSnapshot {
+/** Allocates a zeroed `DebugSnapshot` to be reused across frames via `fillDebugSnapshot`. */
+export function createDebugSnapshot(): DebugSnapshot {
   return {
-    tick: state.tick,
-    lastOffset: state.lastOffset,
-    lastTier: state.lastTier,
-    swayTarget: state.swayTarget,
-    swayAmp: state.swayAmp,
-    lean: state.lean,
-    craneSpeed: state.craneSpeed,
-    sensitivity: state.sensitivity,
-    stabilizer: state.stabilizer,
-    combo: state.comboMult,
-    fps: Math.round(actualFps),
+    tick: 0,
+    lastOffset: 0,
+    lastTier: 0,
+    swayTarget: 0,
+    swayAmp: 0,
+    lean: 0,
+    craneSpeed: 0,
+    sensitivity: 0,
+    stabilizer: 0,
+    combo: 0,
+    fps: 0,
   };
+}
+
+/**
+ * Fills `out` in place from live sim state and the scene's measured frame rate (Principle VI: no
+ * per-frame allocations in the render loop).
+ */
+export function fillDebugSnapshot(
+  out: DebugSnapshot,
+  state: Readonly<SimState>,
+  actualFps: number,
+): void {
+  out.tick = state.tick;
+  out.lastOffset = state.lastOffset;
+  out.lastTier = state.lastTier;
+  out.swayTarget = state.swayTarget;
+  out.swayAmp = state.swayAmp;
+  out.lean = state.lean;
+  out.craneSpeed = state.craneSpeed;
+  out.sensitivity = state.sensitivity;
+  out.stabilizer = state.stabilizer;
+  out.combo = state.comboMult;
+  out.fps = Math.round(actualFps);
+}
+
+/** Maps a `TIER_*` code (including `TIER_NONE`, before any drop has landed) to its display name. */
+export function tierName(tier: number): string {
+  switch (tier) {
+    case TIER_PERFECT:
+      return STRINGS.debug.tiers.perfect;
+    case TIER_GOOD:
+      return STRINGS.debug.tiers.good;
+    case TIER_MISS:
+      return STRINGS.debug.tiers.miss;
+    case TIER_NONE:
+    default:
+      return STRINGS.debug.tiers.none;
+  }
+}
+
+/** Formats a field's value for display, mapping `lastTier` from its `TIER_*` code to a name. */
+export function formatFieldValue(key: keyof DebugSnapshot, value: number): string {
+  return key === 'lastTier' ? tierName(value) : String(value);
 }
 
 /**
@@ -127,7 +170,7 @@ export class DebugOverlay {
         continue;
       }
       this.lastValues.set(field.key, value);
-      this.texts.get(field.key)?.setText(`${field.label}: ${String(value)}`);
+      this.texts.get(field.key)?.setText(`${field.label}: ${formatFieldValue(field.key, value)}`);
     }
   }
 }

@@ -45,6 +45,12 @@ export const STRINGS = Object.freeze({
     stabilizer: 'Stabilizer ‰',
     combo: 'Combo',
     fps: 'FPS',
+    tiers: Object.freeze({
+      none: 'none',
+      perfect: 'Perfect',
+      good: 'Good',
+      miss: 'Miss',
+    }),
   }),
 });
 

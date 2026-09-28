@@ -10,6 +10,7 @@ There is no Vue and no DOM UI except the dev-only tuning panel.
 | Pointer down on the game canvas (mouse or touch) | `requestDrop()` | Ignored if it lands on the Place Roof button (two guards, research R9) |
 | `Space` keydown | `requestDrop()` | `event.repeat === true` is ignored |
 | Pointer down on **Place Roof** | `requestRoof()` only | Never also a drop. Shown only while `canPlaceRoof(sim)` |
+| `Esc` keydown | Return to the run selector | Works at any time during a run, not only after it ends (unlike pointer/`Space`, which only return once the run has a result) |
 | Page hidden / app backgrounded | Pause (no ticks) | On return, the accumulator is reset so time is not fast-forwarded (FR-035) |
 
 A request that the sim rejects (not swinging, input pending, run ended) is dropped silently; it is

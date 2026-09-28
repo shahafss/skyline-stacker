@@ -1,6 +1,15 @@
-import { readFileSync } from 'node:fs';
+import { realpathSync, readFileSync } from 'node:fs';
+import { isAbsolute, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseRunExport } from '../packages/sim/src/export';
 import { replay } from '../packages/sim/src/replay';
+
+/** Resolves `path` against the directory the user ran the command from, when it is relative. */
+function resolveInputPath(path: string): string {
+  if (isAbsolute(path)) return path;
+  const baseDir = process.env['INIT_CWD'] ?? process.cwd();
+  return resolve(baseDir, path);
+}
 
 /**
  * Replays a run export from disk against a fresh sim built from **its own tuning** (FR-050), and
@@ -8,15 +17,26 @@ import { replay } from '../packages/sim/src/replay';
  * outside `packages/sim/src` (Node file I/O; the sim stays free of I/O, per Principle I).
  */
 export function main(argv: readonly string[]): number {
-  const path = argv[0];
-  if (path === undefined) {
+  const rawPath = argv[0];
+  if (rawPath === undefined) {
     console.error('usage: replay-run <run-export.json>');
     return 1;
   }
 
-  const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
-  const run = parseRunExport(raw);
-  const { hash, result } = replay(run.config, run.inputLog);
+  const path = resolveInputPath(rawPath);
+
+  let run: ReturnType<typeof parseRunExport>;
+  let hash: number;
+  let result: ReturnType<typeof replay>['result'];
+  try {
+    const raw = JSON.parse(readFileSync(path, 'utf8')) as unknown;
+    run = parseRunExport(raw);
+    ({ hash, result } = replay(run.config, run.inputLog));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`replay-run: ${message}`);
+    return 1;
+  }
 
   const matches =
     result !== null &&
@@ -36,6 +56,16 @@ export function main(argv: readonly string[]): number {
   return matches ? 0 : 1;
 }
 
-if (import.meta.url === `file://${process.argv[1] ?? ''}`) {
+function isMainModule(): boolean {
+  const argv1 = process.argv[1];
+  if (argv1 === undefined) return false;
+  try {
+    return fileURLToPath(import.meta.url) === realpathSync(argv1);
+  } catch {
+    return false;
+  }
+}
+
+if (isMainModule()) {
   process.exit(main(process.argv.slice(2)));
 }

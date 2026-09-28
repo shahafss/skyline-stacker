@@ -44,9 +44,14 @@ export class CameraRig {
     this.apply();
   }
 
-  /** The current world-Y bounds of the viewport, for renderer culling. */
-  getViewBounds(): { top: number; bottom: number } {
-    return { top: this.camera.scrollY, bottom: this.camera.scrollY + this.viewportHeightPx };
+  /** The current world-Y top bound of the viewport, for renderer culling. */
+  get viewTop(): number {
+    return this.camera.scrollY;
+  }
+
+  /** The current world-Y bottom bound of the viewport, for renderer culling. */
+  get viewBottom(): number {
+    return this.camera.scrollY + this.viewportHeightPx;
   }
 
   private apply(): void {

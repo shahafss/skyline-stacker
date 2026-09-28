@@ -918,7 +918,7 @@ replay it from the command line.
 **Purpose**: Performance tooling and measurement (SC-010), size budget, final validation
 (SC-011) including the grayscale check, and documentation.
 
-- [ ] T090 [P] Implement `apps/web/src/dev/PerfCapture.ts` and `apps/web/src/dev/AutoBot.ts`.
+- [X] T090 [P] Implement `apps/web/src/dev/PerfCapture.ts` and `apps/web/src/dev/AutoBot.ts`.
   Include them only when `import.meta.env.DEV || __PERF_TOOLS__`.
   - `P` records 60 s of frame times into a preallocated `Float64Array(60 * 150)` and reports the
     average fps, the maximum frame ms, and the count of frames over 33 ms in an overlay. The
@@ -932,11 +932,11 @@ replay it from the command line.
     ([contracts/controls.md](./contracts/controls.md)).
   - Add a CI step that runs `VITE_PERF_TOOLS=1 pnpm --filter @skyline/web build` to prove the
     flag builds.
-- [ ] T091 [P] Write `scripts/check-bundle-size.ts` and the root script `check:bundle-size`.
+- [X] T091 [P] Write `scripts/check-bundle-size.ts` and the root script `check:bundle-size`.
   - Sum the gzip-compressed size of every file in `apps/web/dist/` using Node `zlib`.
   - Print it, and fail above 5 MB (5,242,880 bytes) (Principle VI).
   - Add it to `.github/workflows/ci.yml` after the build.
-- [ ] T092 [P] Audit `apps/web/src/render/`, `apps/web/src/loop/`, `apps/web/src/hud/`,
+- [X] T092 [P] Audit `apps/web/src/render/`, `apps/web/src/loop/`, `apps/web/src/hud/`,
   `apps/web/src/fx/` and `apps/web/src/dev/DebugOverlay.ts` for per-frame allocations: no object
   or array literals, closures, or string concatenation inside `update`/render paths. Also grep
   `apps/web/src/` (excluding `strings.ts` and the exempt dev-only tools `dev/TuningPanel.ts`,
@@ -963,7 +963,7 @@ replay it from the command line.
   - Optional, only if a 120 Hz display is available: ≥ 110 fps average with 60 ticks per second.
     Otherwise record "not run; covered by SC-008".
   - If it fails, profile and fix in the render modules before closing the phase.
-- [ ] T095 [P] Update `README.md` with setup, scripts, and a link to
+- [X] T095 [P] Update `README.md` with setup, scripts, and a link to
   [quickstart.md](./quickstart.md). **Keep** the Sync Impact Report comment in
   `.specify/memory/constitution.md`; it is the required change record.
 
@@ -1115,7 +1115,7 @@ Task: "Implement apps/web/src/hud/Hud.ts"
 spec.md, plan.md, the existing tasks, and the constitution. This phase does not re-list Phase
 7–11 work (T076–T095), which is already tracked.
 
-- [ ] T096 Remove the dead `blockHeightPx` private field in `apps/web/src/scenes/GameScene.ts`
+- [X] T096 Remove the dead `blockHeightPx` private field in `apps/web/src/scenes/GameScene.ts`
   (declared at line 52, reassigned at line 72 from a duplicated `90` px magic number) — it is
   never read; every real call site already uses `this.towerRenderer.blockHeightPx`, which is
   correctly sourced from `renderConfig.BASE_BLOCK_HEIGHT_PX` and the run's
@@ -1131,7 +1131,7 @@ spec.md, plan.md, the existing tasks, and the constitution. This phase does not 
 (T057–T081) were implemented. This phase does not re-list T096 above, which remains outstanding
 from the prior pass.
 
-- [ ] T097 Document the `Esc` key in
+- [X] T097 Document the `Esc` key in
   [contracts/controls.md](./contracts/controls.md)'s "Gameplay input" table: pressing `Esc` in
   `GameScene` returns to the run selector at any time (`apps/web/src/scenes/GameScene.ts`,
   `keydown-ESC` → `returnToSelect()`), implemented per T078 ("return to it with Esc or after the
@@ -1145,28 +1145,28 @@ from the prior pass.
 **Purpose**: Remediation found by a third `/speckit-converge` pass, run after Phases 9–10
 (T082–T089) were implemented. This phase does not re-list the still-open T090–T097.
 
-- [ ] T098 Strengthen the overridden-tuning case in `scripts/tests/replay-run.test.ts` so it
+- [X] T098 Strengthen the overridden-tuning case in `scripts/tests/replay-run.test.ts` so it
   proves the export's own tuning is used: assert the output contains `tuningOverridden: true`,
   override a value that always changes the hash (for example the type's `cranePeriodTicks` or
   `swayMult`) instead of only `LIVES`, and assert that `replay` with `DEFAULT_TUNING` gives a
   different hash for that export. Also remove the `mkdtempSync` temp directory in an `afterAll`
   per FR-050, US5/AC1 (partial)
-- [ ] T099 Fix the run-as-main guard in `scripts/replay-run.ts`: it compares `import.meta.url` to
+- [X] T099 Fix the run-as-main guard in `scripts/replay-run.ts`: it compares `import.meta.url` to
   `` `file://${process.argv[1]}` ``, which fails for paths with spaces, other percent-encoded
   characters, or symlinks, so the CLI then prints nothing and exits 0. Compare
   `fileURLToPath(import.meta.url)` with `realpathSync(process.argv[1])` instead, and add a test
   that runs the script through a path that needs encoding, per T089 (partial)
-- [ ] T100 Stop allocating a new `DebugSnapshot` object every frame: `GameScene.update` calls
+- [X] T100 Stop allocating a new `DebugSnapshot` object every frame: `GameScene.update` calls
   `readDebugSnapshot(...)`, which returns a fresh object literal each frame even while the overlay
   is hidden. Fill a preallocated snapshot in place, and skip the read while the overlay is hidden,
   per plan: "No per-frame allocations in the render loop" (Principle VI) (contradicts)
-- [ ] T101 Add a case to `scripts/tests/replay-run.test.ts` where an export's `tuningVersion`
+- [X] T101 Add a case to `scripts/tests/replay-run.test.ts` where an export's `tuningVersion`
   differs from the current `TUNING_VERSION`, and assert that it still replays with `MATCH` and
   exit code 0, per FR-050 (partial)
-- [ ] T102 Show the debug overlay's last tier as a name (none / Perfect / Good / Miss) from
+- [X] T102 Show the debug overlay's last tier as a name (none / Perfect / Good / Miss) from
   `STRINGS` in `apps/web/src/dev/DebugOverlay.ts`, not the raw `TIER_*` integer code, per FR-037
   (partial)
-- [ ] T103 Make `scripts/replay-run.ts` report a missing, unreadable or malformed file (and a
+- [X] T103 Make `scripts/replay-run.ts` report a missing, unreadable or malformed file (and a
   `ReplayError`) as a one-line error with exit code 1 instead of an uncaught stack trace. Resolve a
   relative path against the directory the user ran the command from (`INIT_CWD` when run through
   `pnpm --filter`, which runs in `packages/sim`), per T089 and quickstart step 5 (partial)
