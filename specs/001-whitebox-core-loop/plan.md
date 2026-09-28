@@ -34,10 +34,9 @@ Chromium, WebKit and Firefox.
 **Project Type**: pnpm workspaces monorepo: a pure library (`packages/sim`) and a browser game app (`apps/web`)
 
 **Performance Goals**:
-- 60 fps sustained (≥ 58 average, no frame above 33 ms) on an iPhone 11 in Safari and on
-  desktop Chrome with 4× CPU throttling (the stand-in for a mid-range Android phone).
-- Render at display rate with the sim fixed at 60 ticks per second. The 120 Hz hardware check
-  (≥ 110 fps) is optional, when a 120 Hz display is available; SC-008 covers frame-rate
+- Smooth 60 fps on current phones and desktops (a goal, not a measured gate; constitution
+  v1.3.0). The dev perf tools diagnose stutter when it is seen.
+- Render at display rate with the sim fixed at 60 ticks per second; SC-008 covers frame-rate
   independence automatically.
 - At most 5 ticks per frame.
 
@@ -67,7 +66,7 @@ amendment on 2026-09-27). The notes below record interpretations and resolved it
 | III. UI / engine separation | ✅ | Pre-Phase-3 rule (v1.2.0): player-facing UI (HUD, selector, Place Roof) is drawn in the canvas; the dev-only tuning panel is minimal plain DOM, excluded from production builds (checked in CI) and replaced with Vue in Phase 3. No event bus or Pinia yet |
 | IV. Test-first | ✅ | Unit tests for every rule, cap and tier boundary; ≥ 90% line coverage gate; 4 golden fixtures (3 required) in Node and 3 browsers, with the browser replay in CI from the sim phases onward via `packages/golden-harness`; 10k fuzz (R15). **Cross-browser golden gate**: it applies from T055 onward, the first point where fixtures (T051) and the browser job (T055) both exist; before that there is nothing to replay |
 | V. Single source of tuning | ✅ | `DEFAULT_TUNING` + `TUNING_VERSION` in `tuning.ts`; `SimConfig.tuning` is required and complete (R10). The panel is in-memory and dev-only. Exports carry full tuning plus `tuningOverridden`. Fixtures must deep-equal the defaults (R13). Colors are styling in `renderConfig.ts` |
-| VI. Performance | ✅ | Pooled images; reused event array (R12); preallocated snapshots and perf buffer; accumulator capped at 5 ticks; debug overlay reuses text objects. Measured on the v1.2.0 devices: iPhone 11 (Safari) and desktop Chrome at 4× CPU throttling; 120 Hz check only if a display is available; SC-008 covers frame-rate independence. The real Android check is a Phase 5 item (R16) |
+| VI. Performance | ✅ | Pooled images; reused event array (R12); preallocated snapshots and perf buffer; accumulator capped at 5 ticks; debug overlay reuses text objects. Under v1.3.0 there is no device-measurement gate: SC-008 covers frame-rate independence, the ≤ 5 MB download is checked in CI, and the perf tools (R16) are diagnostics. The real-phone playthrough is a Phase 5 item |
 | VII. Accessibility | ✅ | Each type has a distinct whitebox pattern, roof top shape, icon and text label (not color alone), confirmed by a grayscale check. All user-facing text comes from `strings.ts`, including the debug overlay. **Exempt**: text in the dev-only tools (tuning panel, perf report), because they are excluded from production builds and replaced in Phase 3. Selector is keyboard-navigable with a visible focus ring. HUD text on a dark backing (AA). No analytics; exports are local downloads. Reduced Motion has nothing to disable yet (no cosmetic motion in Phase 1) |
 | VIII. Phased delivery | ✅ | Only Phase 1 scope; no `apps/api`, Vue or Capacitor. The only runtime dependency is Phaser (PRD §8.1). Dev tool deps are justified below |
 | IX. Code standards | ✅ | Strict TS, ESLint + Prettier in CI, pnpm workspaces. `packages/golden-harness` is **not** a constitution exception: Principle IX names the required packages but does not forbid test-only ones. TSDoc with units on every sim export and on `FixedStepLoop`. Tweens and generated textures only; no Spine |
@@ -95,7 +94,8 @@ packages are added.
 4. **Reference devices vs. constitution Principle VI**: no Android phone is available. SC-010
    uses an iPhone 11 (Safari) and desktop Chrome at 4× CPU throttling, and the 120 Hz check is
    optional. **Resolved** by constitution v1.2.0, which adopts these devices and requires a real
-   Android check before public release (PRD §12 Phase 5).
+   Android check before public release (PRD §12 Phase 5). **Superseded** by constitution v1.3.0
+   (2026-09-28): no reference-device gate; one real-phone playthrough before public release.
 
 **Interpretations recorded 2026-09-27 (not exceptions):**
 

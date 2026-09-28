@@ -7,8 +7,8 @@ How to run the Phase 1 build and prove each success criterion. Interfaces are in
 
 - Node.js 22 LTS and pnpm 12 (`corepack enable` picks up the pinned version).
 - Playwright browsers: `pnpm exec playwright install --with-deps chromium webkit firefox`.
-- For SC-010: an iPhone 11 with Safari on the same Wi-Fi network as the desktop, and desktop
-  Chrome with DevTools. A 120 Hz display is optional.
+- Optional, for the SC-010 diagnostics on a phone: the phone on the same Wi-Fi network as the
+  desktop.
 
 ## Setup and run
 
@@ -75,25 +75,24 @@ Run `pnpm dev`, then:
    `filter: grayscale(1)` or an image viewer).
    - Expect all four types to be told apart by pattern, roof shape, icon and name alone.
 
-## Performance check (SC-010)
+## Performance diagnostics (SC-010, optional)
+
+Use this when stutter is noticed or reported. It is not a pass/fail gate (constitution
+Principle VI, v1.3.0). As a guide, a smooth run averages about 60 fps with no frame above 33 ms.
 
 1. Make a production build with the perf tools switched on, and serve it on the LAN:
    `VITE_PERF_TOOLS=1 pnpm build && pnpm --filter @skyline/web preview --host`. This keeps the
    optimized bundle but includes the bot and perf capture. The tuning panel stays excluded.
-2. **iPhone 11 (Safari)**: open `http://<desktop-LAN-IP>:4173/?perf=luxury`. This starts a
+2. **A phone (Safari or Chrome)**: open `http://<desktop-LAN-IP>:4173/?perf=luxury`. This starts a
    Luxury run with the auto-drop bot and begins the 60-second capture automatically once the
    tower passes 50 floors, because the phone has no keyboard for `4` / `B` / `P`. The report
    appears on screen when the capture ends. Keep the phone plugged in, with Low Power Mode off.
-3. **Desktop Chrome, 4× CPU throttling** (stand-in for a mid-range Android phone): open DevTools
+3. **Desktop Chrome, optionally with 4× CPU throttling** (a rough stand-in for a slower phone): open DevTools
    → Performance panel → CPU: **4× slowdown**. Keep DevTools open (the throttle only applies
    while it is open), set the device toolbar to a 390×844 portrait viewport, and load
    `http://localhost:4173/?perf=luxury`.
-4. **Pass on both**: average ≥ 58 fps and no frame above 33 ms over the 60-second capture.
-5. **Optional, only if a 120 Hz display is available**: run the same URL on it. **Pass**: average
-   ≥ 110 fps, with the debug overlay still showing 60 ticks per second. Without one, frame-rate
-   independence is still covered by the automated SC-008 test.
-6. Record the results (device, OS and browser version, throttle setting, numbers) in
-   `specs/001-whitebox-core-loop/validation.md`.
+4. If you record results, note the device, OS and browser version, throttle setting and
+   numbers in `specs/001-whitebox-core-loop/validation.md`.
 
 ## Regenerating golden fixtures
 

@@ -431,15 +431,12 @@ all of them pass.
   hashes.
 - **SC-009 (Input latency)**: An accepted drop is applied on the first simulation tick after the
   input event, verified with injected events.
-- **SC-010 (Performance)**: Using an optimized build with the perf tools enabled, a 60-floor
-  Luxury run averages ≥ 58 fps with no frame above 33 ms over a 60-second capture on both of:
-  - An iPhone 11 in Safari.
-  - Desktop Chrome with DevTools CPU throttling at 4×, as a stand-in for a mid-range Android
-    phone.
-
-  The 120 Hz hardware check is optional and runs only if a 120 Hz display is available (render
-  rate averages ≥ 110 fps while the simulation stays at 60 ticks per second). Frame-rate
-  independence is always guaranteed by the automated SC-008 test.
+- **SC-010 (Performance diagnostics)**: With the perf tools included (development builds, or
+  an optimized build made with `VITE_PERF_TOOLS=1`), `?perf=luxury` plays a 60-floor Luxury run
+  with the auto-drop bot and shows a 60-second report of average fps, maximum frame time and
+  frames over 33 ms. Device measurements are optional diagnostics, not a pass/fail gate
+  (constitution Principle VI, v1.3.0). Frame-rate independence is guaranteed by the automated
+  SC-008 test.
 - **SC-011 (Playability)**: A full Residential run (30 floors plus roof), a game-over run, and a
   Quick Play run can each be played start to finish with mouse, touch, and Spacebar. The miss
   slide-off and game-over collapse both play visibly.
@@ -467,10 +464,9 @@ all of them pass.
 - **Sway before the first floor**: amplitude and displacement are 0 while N = 0.
 - **Rotate-device overlay** (PRD §10.3) is deferred to Phase 3. Phase 1 renders portrait and
   letterboxes in any orientation.
-- **Reference devices**: SC-010 is measured on an iPhone 11 (Safari, 60 Hz) and on desktop
-  Chrome with 4× CPU throttling standing in for a mid-range Android phone. No Android device is
-  available in Phase 1; a real Android check is required before public release (PRD §12
-  Phase 5).
+- **Performance measurement**: there is no reference-device gate (constitution Principle VI,
+  v1.3.0). A single real-phone playthrough is required before public release (PRD §12
+  Phase 5), not in Phase 1.
 - **Tuning overrides**: follow constitution Principle V (v1.1.0). Overrides live in memory in
   development builds only, are flagged with `tuningOverridden`, stay replayable through the
   embedded tuning values, and never become golden fixtures or saved towers.

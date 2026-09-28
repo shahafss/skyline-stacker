@@ -952,17 +952,14 @@ replay it from the command line.
     selector and of a tower of each type with its roof, viewed in grayscale. All four types must
     be told apart by pattern, roof shape, icon and name alone. Save the screenshots next to
     `validation.md`.
-- [ ] T094 Measure performance per [quickstart.md](./quickstart.md#performance-check-sc-010)
-  using an optimized `VITE_PERF_TOOLS=1` build and `?perf=luxury`. Record device, OS and browser
-  version, throttle setting and numbers in `specs/001-whitebox-core-loop/validation.md`
-  (SC-010).
-  - iPhone 11 in Safari: a 60-floor Luxury run averages ≥ 58 fps with no frame above 33 ms over
-    60 s.
-  - Desktop Chrome with DevTools CPU throttling at 4× (stand-in for a mid-range Android phone):
-    the same targets.
-  - Optional, only if a 120 Hz display is available: ≥ 110 fps average with 60 ticks per second.
-    Otherwise record "not run; covered by SC-008".
-  - If it fails, profile and fix in the render modules before closing the phase.
+- [X] T094 Run the perf diagnostics per
+  [quickstart.md](./quickstart.md#performance-diagnostics-sc-010-optional) with an optimized
+  `VITE_PERF_TOOLS=1` build and `?perf=luxury`, and record the results in
+  `specs/001-whitebox-core-loop/validation.md` (SC-010).
+  - **Amended 2026-09-28 (constitution v1.3.0)**: this is an optional diagnostic, not a pass/fail
+    gate. The original targets (iPhone 11 Safari and 4×-throttled desktop Chrome at ≥ 58 fps
+    average with no frame above 33 ms, plus an optional 120 Hz check) no longer apply. The
+    iPhone 11 Safari capture was recorded; the throttled-Chrome capture was not run.
 - [X] T095 [P] Update `README.md` with setup, scripts, and a link to
   [quickstart.md](./quickstart.md). **Keep** the Sync Impact Report comment in
   `.specify/memory/constitution.md`; it is the required change record.

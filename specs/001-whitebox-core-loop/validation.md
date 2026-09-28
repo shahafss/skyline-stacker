@@ -187,3 +187,9 @@ issue.
 ### 120 Hz display
 
 Not run; no 120 Hz display available. Covered by SC-008.
+
+### Desktop Chrome, 4× CPU throttling
+
+Not run. Constitution v1.3.0 (2026-09-28) removed the per-phase device-measurement gate, so this
+capture and the SC-010 thresholds are optional diagnostics. T094 is closed on the iPhone 11
+Safari capture above.

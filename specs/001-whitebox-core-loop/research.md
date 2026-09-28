@@ -322,7 +322,7 @@ seconds. Random gaps cover drops, roof requests during every phase, and runs tha
 production builds made with `VITE_PERF_TOOLS=1` so measurements use the optimized bundle, records frame
 times for 60 seconds into a preallocated `Float64Array` and reports the average fps, the maximum
 frame time, and the number of frames over 33 ms. The manual protocol in
-[quickstart.md](./quickstart.md#performance-check-sc-010) runs a scripted 60-floor Luxury run
+[quickstart.md](./quickstart.md#performance-diagnostics-sc-010-optional) runs a scripted 60-floor Luxury run
 (auto-drop bot, same build flag), started with the URL parameter `?perf=luxury` so it works on a
 touch-only phone. The measurement targets are an iPhone 11 in Safari and desktop Chrome with 4×
 CPU throttling as a stand-in for a mid-range Android phone. A 120 Hz check is optional.
@@ -330,6 +330,10 @@ CPU throttling as a stand-in for a mid-range Android phone. A 120 Hz check is op
 **Rationale**: SC-010 needs repeatable measurements on the available devices; the scripted bot
 and URL start make runs identical on each. CPU throttling approximates a slower CPU but not a
 mobile GPU, so a real Android check is still required before public release (PRD §12 Phase 5).
+
+**Amended 2026-09-28 (constitution v1.3.0)**: the capture and bot remain, but as optional
+diagnostics. There is no reference-device pass/fail gate; one real-phone playthrough is
+required before public release.
 
 **Size budget**: Phaser 4 minified and gzipped is expected to be well under 1 MB, far inside the
 5 MB MVP budget. The build reports compressed size.

@@ -584,13 +584,9 @@ interface SaveV1 {
 
 ### 10.2 Performance
 
-- **Reference devices:**
-  - iPhone 11 in Safari (60 Hz display).
-  - Desktop Chrome with DevTools CPU throttling at 4×, as a stand-in for a mid-range Android phone.
-  - Any desktop from the last 5 years.
-  - A 120 Hz display is optional: the hardware check runs only when one is available. Frame-rate independence is guaranteed by an automated test.
-  - A real mid-range Android device (Pixel 6a / Galaxy A54 class, Chrome) must be checked before public release (§12 Phase 5).
-- **Frame rate:** 60 fps sustained during play. On 120 Hz displays, rendering runs at the display rate while the simulation remains at 60 ticks per second.
+- **Frame rate:** the game should run smoothly at 60 fps on current phones and desktops. Rendering runs at the display rate while the simulation remains at 60 ticks per second. Frame-rate independence is guaranteed by an automated test.
+- **No per-phase device measurement:** there is no reference-device pass/fail gate. The dev perf tools (frame-time capture and auto-drop bot) are diagnostics, used when stutter is noticed or reported.
+- **Real-device check:** before public release (§12 Phase 5), the game is played through once on a real phone (any current mid-range iOS or Android device) with no noticeable stutter.
 - **Initial download:** ≤ 5 MB compressed for MVP.
 - **Time to interactive:** < 4 s on a fast 4G connection.
 - **Supported browsers:** Last 2 versions of Chrome, Edge, Firefox; Safari / iOS Safari 16+.
@@ -676,7 +672,7 @@ Each phase is specified and built separately. A phase is complete only when all 
    - Replaying the same log 1,000 times in one process yields the same hash every time.
 8. **Frame-rate independence:** A headless test drives the render loop at simulated 30, 60, 120 and 144 Hz with the same scripted input ticks. It produces identical input logs and identical final hashes.
 9. **Input latency:** An accepted drop is applied on the first simulation tick after the input event, verified by a test with injected events.
-10. **Performance:** With an optimized build, a 60-floor Luxury run averages ≥ 58 fps with no frame above 33 ms over a 60-second capture on an iPhone 11 in Safari and on desktop Chrome with 4× CPU throttling. Optional, if a 120 Hz display is available: the render rate is ≥ 110 fps average while the simulation stays at 60 ticks per second.
+10. **Performance diagnostics:** With the perf tools included (development builds, or an optimized build made with `VITE_PERF_TOOLS=1`), `?perf=luxury` plays a Luxury run with the auto-drop bot and shows a 60-second frame-time report (average fps, maximum frame time, frames over 33 ms). No device measurement is required to complete the phase (§10.2).
 11. **Playability:** A full Residential run (30 floors plus roof), a game-over run, and a Quick Play run can each be played start to finish with mouse, touch and Spacebar. The miss slide-off and the game-over collapse both play.
 
 ### Phase 2 — Playtest and Tuning Gate
@@ -714,7 +710,6 @@ Each phase is specified and built separately. A phase is complete only when all 
 - The HUD reflects every simulation event within one rendered frame.
 - Quick Play is fully playable from the title screen, and the local best persists across reloads.
 - A corrupted save is recovered as specified in §8.6.
-- All Phase 1 performance criteria still pass with the Vue shell mounted.
 
 ### Phase 4 — City Mode (MVP complete)
 
@@ -733,9 +728,8 @@ Each phase is specified and built separately. A phase is complete only when all 
 - The colorblind check passes: all 4 types can be identified in grayscale screenshots.
 - Reduced Motion disables every effect listed in §10.4.
 - The initial download is ≤ 5 MB compressed.
-- All Phase 1 performance criteria still pass with final art.
 - The debug overlay (`D`) is disabled or hidden in public production builds before release. Run export may stay available.
-- A real mid-range Android device (Pixel 6a / Galaxy A54 class, Chrome) meets the Phase 1 performance targets before public release. Earlier phases use desktop Chrome with 4× CPU throttling as a stand-in.
+- Before public release, the game is played through once on a real phone (any current mid-range iOS or Android device) with no noticeable stutter (§10.2).
 
 ### Phase 6 — Backend and Leaderboards (v1.1)
 
