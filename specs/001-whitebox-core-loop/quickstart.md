@@ -6,7 +6,8 @@ How to run the Phase 1 build and prove each success criterion. Interfaces are in
 ## Prerequisites
 
 - Node.js 22 LTS and pnpm 12 (`corepack enable` picks up the pinned version).
-- Playwright browsers: `pnpm exec playwright install --with-deps chromium webkit firefox`.
+- Playwright browsers:
+  `pnpm --filter @skyline/golden-harness exec playwright install --with-deps chromium webkit firefox`.
 - Optional, for the SC-010 diagnostics on a phone: the phone on the same Wi-Fi network as the
   desktop.
 

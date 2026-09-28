@@ -34,5 +34,5 @@ jobs:
           node-version: 22
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium webkit firefox
+      - run: pnpm --filter @skyline/golden-harness exec playwright install --with-deps chromium webkit firefox
       - run: pnpm --filter @skyline/golden-harness test:e2e
